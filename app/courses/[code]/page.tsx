@@ -1,10 +1,12 @@
 import React from 'react';
 import { Mail, Bell, FileText, Edit3 } from 'lucide-react'; // アイコン用にlucide-reactを使用（お好みのものに変えてもOKです）
+import { COURSES } from '@/lib/timetable-data';
+import { notFound } from 'next/navigation';
 
-type Params = {
-  params: {
+type Props = {
+  params: Promise<{
     code: string;
-  };
+  }>
 }
 
 // ==========================================
@@ -36,28 +38,30 @@ const SectionWrapper: React.FC<SectionProps> = ({ title, bgColor, icon, children
 // ==========================================
 // メインページコンポーネント
 // ==========================================
-export default function CoursePage({ params }: Params) {
-  const code = params.code;
-  
+export default async function CoursePage({ params }: Props) {
+  const { code } = await params;
+  const courseList = COURSES.filter(course => course.code === code);
+  if (courseList.length == 0) {
+    notFound()
+  }
+  const course = courseList[0];
+
   return (
     <main className="max-w-6xl mx-auto px-4 py-6">
       {/* コースの概要説明 */}
       <section className="bg-white border border-gray-300 rounded-sm p-4 mb-6 shadow-sm">
         <h2 className="text-base font-bold border-b border-gray-200 pb-2 mb-3">コースの概要説明/Course Summary</h2>
-        <p className="text-sm text-gray-600">このページはお知らせや資料の配布、課題の提出に利用します。</p>
+        <p className="text-sm text-gray-600">{course.courseSummary}</p>
       </section>
 
       {/* 授業情報 */}
       <section className="bg-white border border-gray-300 rounded-sm p-4 mb-6 shadow-sm">
         <h2 className="text-base font-bold border-b border-gray-200 pb-2 mb-2">授業情報</h2>
-        <p className="text-xs text-gray-400 mb-3">更新日時:2026/05/12 10:27</p>
-        <ul className="list-disc list-inside text-sm space-y-1 text-gray-700 pl-2">
-          <li>時限：火曜2限（10:40～12:10）</li>
-          <li>教室：J202</li>
-          <li>成績評価：期末試験70%、演習30%</li>
-          <li>教科書：「レクチャー 離散数学」（サイエンス社、2019年）</li>
-          <li>質問がある場合は「担当へのメッセージ」をご利用ください。メールでも構いません。E-mail: tkuniya@port.kobe-u.ac.jp</li>
-        </ul>
+        <p className="text-xs text-gray-400 mb-3">更新日時:{course.classDetails?.updatedAt}</p>
+        <div
+          className="prose max-w-none text-slate-700"
+          dangerouslySetInnerHTML={{ __html: course.classDetails ? course.classDetails.innerHTML : "" }}
+        />
       </section>
 
       {/* --- 各セクションブロック --- */}

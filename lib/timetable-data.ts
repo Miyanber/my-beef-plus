@@ -20,6 +20,11 @@ export interface Course {
   color: CourseColor;
   day: DayKey;        // 曜日をデータ側に持たせる
   period: number;     // 時限（コマ）をデータ側に持たせる
+  courseSummary?: string; // コースの概要説明
+  classDetails?: {
+    innerHTML: string;
+    updatedAt: string;
+  };  // 授業情報
 }
 
 // 汎用的なフラット配列
@@ -31,6 +36,11 @@ export const COURSES: Course[] = [
     color: "blue",
     day: "wed",
     period: 1,
+    courseSummary: "はじめに，高等学校で習った1変数関数の微分積分を多変数関数へ拡張する．それを踏まえ，曲線や曲面について学び，ベクトル解析に関する諸定理を理解する．その後に，フーリエ解析をはじめ，フーリエ解析の微分方程式への応用，微分方程式の数値解法，複素関数を学んでいく．",
+    classDetails: {
+      innerHTML: `<p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">はじめに，2変数関数の微分積分を中心に講義する．特にテイラーの定理，陰関数定理，逆写像定理について詳しく説明する．また，ベクトル解析ではガウスの発散定理，ストークスの定理について，その物理的意味も説明する．最後に，応用解析学の三本柱であるフーリエ解析，微分方程式，複素関数について俯瞰するとともに，重要な点を述べる．本講義は「対面」で実施する．</span></p><p><br></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">1. 多変数関数と偏導関数，高階偏導関数</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">2. テイラーの定理，陰関数定理，逆写像定理</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">3. 極値問題</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">4. 二重積分(定義，性質，累次積分)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">5. 二重積分(変数変換，広義重積分)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">6. 多重積分とその応用</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">7. 外積とベクトル値関数</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">8. 曲線と曲面</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">9. スカラー場の勾配，ベクトル場の発散と回転</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">10. 線積分と面積分</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">11. グリーンの定理，ガウスの発散定理，ストークスの定理</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">12. フーリエ解析(フーリエ級数，フーリエ変換，ラプラス変換)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">13. フーリエ解析の微分方程式への応用</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">14. 微分方程式の数値解法</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">15. 複素関数(正則関数，複素積分)</span></p><p><br></p>`,
+      updatedAt: `2026/04/09 15:55`
+    }
   },
   {
     code: "1X052",
