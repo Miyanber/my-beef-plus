@@ -13,13 +13,14 @@ import {
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { usePathname } from "next/navigation"
 
 const NAV_ITEMS = [
-  { label: "HOME", icon: Home, active: false },
-  { label: "課題・テスト一覧", icon: ClipboardList, active: false },
-  { label: "授業情報", icon: BookOpen, active: false },
-  { label: "コース検索", icon: Search, active: true },
-  { label: "BEEF+ Venture", icon: Sparkles, active: false },
+  { label: "HOME", path: "/", icon: Home },
+  { label: "課題・テスト一覧", path: "/attachments", icon: ClipboardList },
+  { label: "授業情報", path: "/classes", icon: BookOpen },
+  { label: "コース検索", path: "/search", icon: Search },
+  { label: "BEEF+ Venture", path: "/venture", icon: Sparkles },
 ]
 
 export function AppSidebar() {
@@ -121,27 +122,31 @@ function LogoLockup({ isOpen }: { isOpen: boolean }) {
 function Navigation({ isOpen }: { isOpen: boolean }) {
   return (
     <nav className="flex flex-col gap-1.5" aria-label="メインナビゲーション">
-      {NAV_ITEMS.map(({ label, icon: Icon, active }) => (
-        <a
-          key={label}
-          href="#"
-          aria-current={active ? "page" : undefined}
-          title={!isOpen ? label : undefined}
-          className={cn(
-            "group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all",
-            isOpen ? "px-3.5 gap-3" : "justify-center px-0",
-            active
-              ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
-              : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
-          )}
-        >
-          {active && (
-            <span className="absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full bg-sidebar-primary" />
-          )}
-          <Icon className="size-[18px] shrink-0" />
-          {isOpen && <span className="truncate">{label}</span>}
-        </a>
-      ))}
+      {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
+        const pathname = usePathname()
+        const active = pathname === path;
+        return (
+          <a
+            key={label}
+            href="#"
+            aria-current={active ? "page" : undefined}
+            title={!isOpen ? label : undefined}
+            className={cn(
+              "group relative flex items-center rounded-xl py-3 text-sm font-medium transition-all",
+              isOpen ? "px-3.5 gap-3" : "justify-center px-0",
+              active
+                ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground",
+            )}
+          >
+            {active && (
+              <span className="absolute top-1/2 left-0 h-6 w-1 -translate-y-1/2 rounded-r-full bg-sidebar-primary" />
+            )}
+            <Icon className="size-[18px] shrink-0" />
+            {isOpen && <span className="truncate">{label}</span>}
+          </a>
+        )
+      })}
     </nav>
   )
 }
