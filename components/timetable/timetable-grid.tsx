@@ -3,16 +3,18 @@ import { cn } from "@/lib/utils"
 import {
   DAYS,
   PERIODS,
-  SCHEDULE,
+  COURSES,
   COLOR_STYLES,
   type Course,
 } from "@/lib/timetable-data"
 import React from "react"
+import Link from "next/link"
 
 function CourseCard({ course }: { course: Course }) {
-  const styles = COLOR_STYLES[course.color]
+  const styles = COLOR_STYLES[course.color];
   return (
-    <div
+    <Link
+      href={`/courses/${course.code}`}
       className={cn(
         "flex flex-col gap-2 border-2 p-3 transition-colors h-full justify-between", // 高さを揃えやすく
         styles.cell,
@@ -26,11 +28,11 @@ function CourseCard({ course }: { course: Course }) {
       
       <p 
         className={cn("text-xs leading-relaxed truncate", styles.teacher)} 
-        title={course.teachers} // ホバーした瞬間にフルネームがツールチップで出るようにしておく
+        title={course.teachers.join(", ")} // ホバーした瞬間にフルネームがツールチップで出るようにしておく
       >
         {course.teachers}
       </p>
-    </div>
+    </Link>
   )
 }
 
@@ -90,16 +92,13 @@ export function TimetableGrid() {
 
               {/* 各曜日の授業セル */}
               {DAYS.map((day) => {
-                const courses = SCHEDULE[period]?.[day.key] ?? []
+                const courses = COURSES.filter(course => course.day === day.key && course.period === period);
                 
                 return (
                   <div
                     key={day.key}
                     className="border-t-2 border-l-2 border-border/50 p-2 min-h-24 content-start"
                   >
-                    {/* 隔週で入れ替わる授業がある場合でも、
-                      flex-col gap-2 によって縦に綺麗にカードが並びます。
-                    */}
                     {courses.length > 0 && (
                       <div className="flex flex-col">
                         {courses.map((course) => (

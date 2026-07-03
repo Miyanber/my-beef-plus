@@ -1,6 +1,12 @@
 import React from 'react';
 import { Mail, Bell, FileText, Edit3 } from 'lucide-react'; // アイコン用にlucide-reactを使用（お好みのものに変えてもOKです）
 
+type Params = {
+  params: {
+    code: string;
+  };
+}
+
 // ==========================================
 // 共通のブロックラッパーコンポーネント
 // ==========================================
@@ -30,7 +36,9 @@ const SectionWrapper: React.FC<SectionProps> = ({ title, bgColor, icon, children
 // ==========================================
 // メインページコンポーネント
 // ==========================================
-export default function CoursePage() {
+export default function CoursePage({ params }: Params) {
+  const code = params.code;
+  
   return (
     <main className="max-w-6xl mx-auto px-4 py-6">
       {/* コースの概要説明 */}
