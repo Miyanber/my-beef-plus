@@ -20,6 +20,11 @@ export interface Course {
   color: CourseColor;
   day: DayKey;        // 曜日をデータ側に持たせる
   period: number;     // 時限（コマ）をデータ側に持たせる
+  courseSummary?: string; // コースの概要説明
+  classDetails?: {
+    innerHTML: string;
+    updatedAt: string;
+  };  // 授業情報
 }
 
 // 汎用的なフラット配列
@@ -31,6 +36,11 @@ export const COURSES: Course[] = [
     color: "blue",
     day: "wed",
     period: 1,
+    courseSummary: "本講義では、基礎的な理論と応用手法について段階的に学習します。各回の演習を通じて理解を深め、実践的な問題解決能力を養います。",
+    classDetails: {
+      innerHTML: `<p>本講義のシラバスおよび各回の実施計画です（サンプルデータ）。</p>`,
+      updatedAt: `2026/04/09 15:55`
+    }
   },
   {
     code: "MA102",
