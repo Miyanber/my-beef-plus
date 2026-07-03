@@ -128,7 +128,7 @@ function Navigation({ isOpen }: { isOpen: boolean }) {
         return (
           <a
             key={label}
-            href="#"
+            href={path}
             aria-current={active ? "page" : undefined}
             title={!isOpen ? label : undefined}
             className={cn(
