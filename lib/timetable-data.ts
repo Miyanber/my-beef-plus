@@ -36,13 +36,13 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X052",
         title: "代数・幾何演習1",
         teachers: "小林 太, 後藤 優太",
-        color: "violet",
+        color: "blue",
       },
       {
         code: "1X053",
         title: "解析演習1",
         teachers: "小林 太, 後藤 優太",
-        color: "teal",
+        color: "blue",
       },
     ],
     fri: [
@@ -50,7 +50,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "2X065",
         title: "数理情報英語B",
         teachers: "仁田 功一, 上崎 麻衣子",
-        color: "rose",
+        color: "blue",
       },
     ],
   },
@@ -60,7 +60,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X051",
         title: "離散数学",
         teachers: "國谷 紀良",
-        color: "sky",
+        color: "blue",
       },
     ],
     fri: [
@@ -69,7 +69,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         title: "演習1",
         teachers:
           "三宅 洋平, FINNERTY PATRICK MARTIN, 森田 紘平, 中田 柊也, システム情報学部教員, 山本 大介, 上島 基之, 中島 涼輔, 山下 歩",
-        color: "amber",
+        color: "blue",
       },
     ],
   },
@@ -79,7 +79,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X007",
         title: "アルゴリズムとデータ構造",
         teachers: "大川 剛直",
-        color: "violet",
+        color: "blue",
       },
     ],
     tue: [
@@ -87,7 +87,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X003",
         title: "線形代数",
         teachers: "菊池 誠",
-        color: "sky",
+        color: "blue",
       },
     ],
     wed: [
@@ -95,7 +95,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X005",
         title: "物理基礎",
         teachers: "陰山 聡, 臼井 英之",
-        color: "teal",
+        color: "blue",
       },
     ],
   },
@@ -105,7 +105,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X004",
         title: "基礎解析",
         teachers: "佐野 英樹",
-        color: "amber",
+        color: "blue",
       },
     ],
     thu: [
@@ -113,7 +113,7 @@ export const SCHEDULE: Record<number, Partial<Record<DayKey, Course[]>>> = {
         code: "1X006",
         title: "確率・統計・情報",
         teachers: "澤 正憲",
-        color: "rose",
+        color: "blue",
       },
     ],
     fri: [

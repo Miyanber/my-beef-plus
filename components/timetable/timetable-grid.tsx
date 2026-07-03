@@ -7,23 +7,27 @@ import {
   COLOR_STYLES,
   type Course,
 } from "@/lib/timetable-data"
+import React from "react"
 
 function CourseCard({ course }: { course: Course }) {
   const styles = COLOR_STYLES[course.color]
   return (
     <div
       className={cn(
-        "flex flex-col gap-2 rounded-xl border p-3 transition-colors",
+        "flex flex-col gap-2 border-2 p-3 transition-colors h-full justify-between", // 高さを揃えやすく
         styles.cell,
       )}
     >
-      <div className="flex flex-col gap-1.5">
-        <Badge className={cn("font-mono", styles.badge)}>{course.code}</Badge>
-        <p className={cn("text-sm font-semibold leading-snug text-pretty", styles.title)}>
+      <div className="flex flex-col gap-1">
+        <p className={cn("text-sm font-semibold leading-snug text-pretty line-clamp-2", styles.title)}>
           {course.title}
         </p>
       </div>
-      <p className={cn("text-xs leading-relaxed", styles.teacher)}>
+      
+      <p 
+        className={cn("text-xs leading-relaxed truncate", styles.teacher)} 
+        title={course.teachers} // ホバーした瞬間にフルネームがツールチップで出るようにしておく
+      >
         {course.teachers}
       </p>
     </div>
@@ -31,68 +35,86 @@ function CourseCard({ course }: { course: Course }) {
 }
 
 export function TimetableGrid() {
+  const dayCount = DAYS.length
+
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[880px] border-separate border-spacing-0">
-          <thead>
-            <tr>
-              <th className="w-16 bg-muted/40 px-3 py-4 text-center text-xs font-semibold text-muted-foreground">
-                時限
-              </th>
-              {DAYS.map((day) => (
-                <th
-                  key={day.key}
-                  className="border-l border-border/60 bg-muted/40 px-4 py-4 text-center"
-                >
-                  <div className="flex flex-col items-center leading-tight">
-                    <span className="text-base font-bold text-foreground">
-                      {day.label}
-                    </span>
-                    <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
-                      {day.sub}
-                    </span>
+        {/* 1列目(時限): 64px
+          2列目以降(曜日): 曜日の数に合わせて等幅 (1fr) で自動生成
+          min-w-[880px] で横スクロールの最小幅を確保
+        */}
+        <div 
+          className="grid min-w-200"
+          style={{ gridTemplateColumns: `64px repeat(${dayCount}, minmax(0, 1fr))` }}
+        >
+          
+          {/* =================================================================
+            ヘッダーエリア（時限ラベル ＋ 各曜日）
+          ================================================================== */}
+          {/* 左上の空セル（「時限」表記） */}
+          <div className="bg-muted/40 px-3 py-4 text-center text-xs font-semibold text-muted-foreground flex items-center justify-center">
+            時限
+          </div>
+          
+          {/* 曜日ヘッダー */}
+          {DAYS.map((day) => (
+            <div
+              key={day.key}
+              className="border-l-2 border-border/60 bg-muted/40 px-4 py-4 text-center flex flex-col items-center justify-center leading-tight"
+            >
+              <span className="text-base font-bold text-foreground">
+                {day.label}
+              </span>
+              <span className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+                {day.sub}
+              </span>
+            </div>
+          ))}
+
+          {/* =================================================================
+            ボディエリア（時限行 ＋ 各コマの授業セル）
+          ================================================================== */}
+          {PERIODS.map((period) => (
+            <React.Fragment key={period}>
+              
+              {/* 行の先頭：時限セル */}
+              <div className="border-t-2 border-border/50 bg-muted/20 px-3 py-4 text-center flex flex-col items-center justify-center leading-tight">
+                <span className="text-lg font-bold text-foreground/80">
+                  {period}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  時限
+                </span>
+              </div>
+
+              {/* 各曜日の授業セル */}
+              {DAYS.map((day) => {
+                const courses = SCHEDULE[period]?.[day.key] ?? []
+                
+                return (
+                  <div
+                    key={day.key}
+                    className="border-t-2 border-l-2 border-border/50 p-2 min-h-24 content-start"
+                  >
+                    {/* 隔週で入れ替わる授業がある場合でも、
+                      flex-col gap-2 によって縦に綺麗にカードが並びます。
+                    */}
+                    {courses.length > 0 && (
+                      <div className="flex flex-col">
+                        {courses.map((course) => (
+                          <CourseCard key={course.code} course={course} />
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {PERIODS.map((period) => (
-              <tr key={period} className="group">
-                <td className="border-t border-border/50 bg-muted/20 px-3 py-4 text-center align-middle">
-                  <div className="flex flex-col items-center leading-tight">
-                    <span className="text-lg font-bold text-foreground/80">
-                      {period}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">
-                      時限
-                    </span>
-                  </div>
-                </td>
-                {DAYS.map((day) => {
-                  const courses = SCHEDULE[period]?.[day.key] ?? []
-                  return (
-                    <td
-                      key={day.key}
-                      className="border-t border-l border-border/50 p-2 align-top"
-                    >
-                      {courses.length > 0 ? (
-                        <div className="flex flex-col gap-2">
-                          {courses.map((course) => (
-                            <CourseCard key={course.code} course={course} />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="h-full min-h-24" aria-hidden="true" />
-                      )}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )
+              })}
+
+            </React.Fragment>
+          ))}
+
+        </div>
       </div>
     </div>
   )
