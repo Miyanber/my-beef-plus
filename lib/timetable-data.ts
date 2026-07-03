@@ -12,6 +12,33 @@ export const DAYS: { key: DayKey; label: string; sub: string }[] = [
 
 export const PERIODS = [1, 2, 3, 4, 5, 6]
 
+interface Message {
+  title: string;
+  createdAt: string;
+  status: string;
+  url: string;
+}
+
+interface Announcement {
+
+}
+
+interface Material {
+
+}
+
+interface assignment {
+
+}
+
+interface exam {
+
+}
+
+interface bulletinBoard {
+
+}
+
 // 1つの授業を表すインターフェース（再利用性が高い）
 export interface Course {
   code: string;
