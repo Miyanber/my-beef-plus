@@ -19,21 +19,62 @@ interface Message {
   url: string;
 }
 
+// お知らせ
 interface Announcement {
-
+  title: string;
+  postingPeriod: {
+    start: string;
+    end: string;
+  };
+  sender: string;
+  content: string; // HTML
 }
 
-interface Material {
-
+// 教材
+interface LectureMaterial {
+  title: string;
+  publicationPeriod: {
+    start: string;
+    end: string;
+  };
+  description: string;
+  attachments: Attachment[];
 }
 
-interface assignment {
-
+// 資料ファイル
+interface Attachment {
+  title: string;        // 資料タイトル (exercise.pdf)
+  fileName: string;     // ファイル名 (exercise.pdf)
+  comment: string;      // コメント (空文字)
+  downloadUrl: string;  // 実際のファイルURL
 }
 
-interface exam {
-
+// 課題
+interface Assignment {
+  id: string;           // 課題を一意に識別するID
+  title: string;        // 課題タイトル (演習問題 (2026/6/16・6/23))
+  submissionPeriod: {   // 提出期間
+    start: string;      // 提出開始日 (2026/06/16 12:00)
+    end: string;        // 提出終了日 (2026/06/27 00:00)
+  };
+  submissionStatus: "SUBMITTED_ON_TIME" | "NOT_SUBMITTED_YET" | "SUBMITTED_OUT_TIME";    // 提出状況 (期限内提出)
+  url: string;          // 課題提出ページへのURL
 }
+
+interface Quiz {
+  id: string;                  // テストを一意に識別するID
+  title: string;               // テストタイトル (第11回テスト)
+  examinationPeriod: {         // 解答期間・期限
+    start: string;             // 開始日時 (2026/06/26 10:40)
+    end: string;               // 終了日時・期限 (2026/06/26 12:15)
+  };
+  status: QuizStatus;          // 解答ステータス (解答済)
+  resultUrl?: string;             // 結果ページへのURL (解答済の場合のみ)
+  answerUrl?: string;             // 解答ページへのURL (解答済の場合のみ)
+}
+
+// ステータスを型安全に管理する場合のEnum例
+type QuizStatus = 'COMPLETED' | 'UNANSWERED' | 'EXPIRED'; // 解答済, 未解答, 期間外 など
 
 interface bulletinBoard {
 
@@ -52,6 +93,11 @@ export interface Course {
     innerHTML: string;
     updatedAt: string;
   };  // 授業情報
+  messages?: Message[]; // 担当者へのメッセージ
+  announcements?: Announcement[]; // お知らせ
+  lectureMaterials?: LectureMaterial[]; // 教材
+  assignments?: Assignment[]; // 課題
+  quizzes?: Quiz[]; // テスト
 }
 
 // 汎用的なフラット配列
@@ -63,11 +109,6 @@ export const COURSES: Course[] = [
     color: "blue",
     day: "wed",
     period: 1,
-    courseSummary: "はじめに，高等学校で習った1変数関数の微分積分を多変数関数へ拡張する．それを踏まえ，曲線や曲面について学び，ベクトル解析に関する諸定理を理解する．その後に，フーリエ解析をはじめ，フーリエ解析の微分方程式への応用，微分方程式の数値解法，複素関数を学んでいく．",
-    classDetails: {
-      innerHTML: `<p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">はじめに，2変数関数の微分積分を中心に講義する．特にテイラーの定理，陰関数定理，逆写像定理について詳しく説明する．また，ベクトル解析ではガウスの発散定理，ストークスの定理について，その物理的意味も説明する．最後に，応用解析学の三本柱であるフーリエ解析，微分方程式，複素関数について俯瞰するとともに，重要な点を述べる．本講義は「対面」で実施する．</span></p><p><br></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">1. 多変数関数と偏導関数，高階偏導関数</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">2. テイラーの定理，陰関数定理，逆写像定理</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">3. 極値問題</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">4. 二重積分(定義，性質，累次積分)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">5. 二重積分(変数変換，広義重積分)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">6. 多重積分とその応用</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">7. 外積とベクトル値関数</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">8. 曲線と曲面</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">9. スカラー場の勾配，ベクトル場の発散と回転</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">10. 線積分と面積分</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">11. グリーンの定理，ガウスの発散定理，ストークスの定理</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">12. フーリエ解析(フーリエ級数，フーリエ変換，ラプラス変換)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">13. フーリエ解析の微分方程式への応用</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">14. 微分方程式の数値解法</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">15. 複素関数(正則関数，複素積分)</span></p><p><br></p>`,
-      updatedAt: `2026/04/09 15:55`
-    }
   },
   {
     code: "1X052",
@@ -108,6 +149,55 @@ export const COURSES: Course[] = [
     color: "blue",
     day: "fri",
     period: 2,
+    courseSummary: "はじめに，高等学校で習った1変数関数の微分積分を多変数関数へ拡張する．それを踏まえ，曲線や曲面について学び，ベクトル解析に関する諸定理を理解する．その後に，フーリエ解析をはじめ，フーリエ解析の微分方程式への応用，微分方程式の数値解法，複素関数を学んでいく．",
+    classDetails: {
+      innerHTML: `<p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">はじめに，2変数関数の微分積分を中心に講義する．特にテイラーの定理，陰関数定理，逆写像定理について詳しく説明する．また，ベクトル解析ではガウスの発散定理，ストークスの定理について，その物理的意味も説明する．最後に，応用解析学の三本柱であるフーリエ解析，微分方程式，複素関数について俯瞰するとともに，重要な点を述べる．本講義は「対面」で実施する．</span></p><p><br></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">1. 多変数関数と偏導関数，高階偏導関数</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">2. テイラーの定理，陰関数定理，逆写像定理</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">3. 極値問題</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">4. 二重積分(定義，性質，累次積分)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">5. 二重積分(変数変換，広義重積分)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">6. 多重積分とその応用</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">7. 外積とベクトル値関数</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">8. 曲線と曲面</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">9. スカラー場の勾配，ベクトル場の発散と回転</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">10. 線積分と面積分</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">11. グリーンの定理，ガウスの発散定理，ストークスの定理</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">12. フーリエ解析(フーリエ級数，フーリエ変換，ラプラス変換)</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">13. フーリエ解析の微分方程式への応用</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">14. 微分方程式の数値解法</span></p><p><span style="background-color: rgb(255, 255, 255); color: rgb(0, 0, 0);">15. 複素関数(正則関数，複素積分)</span></p><p><br></p>`,
+      updatedAt: `2026/04/09 15:55`
+    },
+    messages: [],
+    announcements: [
+      {
+        title: "6月26日の授業について",
+        postingPeriod: {
+          start: "2026/06/26 07:50",
+          end: "9999/12/31 00:00",
+        },
+        sender: "中島　涼輔",
+        content: `<p>現在、大雨により京阪神の広い地区で公共交通機関が運転見合わせとなっており、</p><p>すでに数名の方から通学困難との連絡をいただいております。</p><p>そのため、そのような理由で出席できない方向けに Teams でオンライン配信を行う予定です。</p><p>オンライン受講を希望の方は、Beef+ 上のメッセージに</p><p>欠席理由（運転見合わせの路線、気象警報等）を記載の上ご連絡ください。</p>`
+      }
+    ],
+    lectureMaterials: [
+      {
+        title: "第6回授業資料",
+        publicationPeriod: {
+          start: "2026/05/21 00:00",
+          end: "9999/12/31 23:59"
+        },
+        description: "<p>第1回（4/10）授業資料です。</p>",
+        attachments: [
+          {
+            title: "enshu1_6th.pdf",
+            fileName: "enshu1_6th.pdf",
+            comment: "",
+            downloadUrl: "/downloads/enshu1_6th.pdf"
+          },
+          {
+            title: "enshu1_6th_訂正版.pdf",
+            fileName: "enshu1_6th_訂正版.pdf",
+            comment: "課題の問題に訂正があったので、訂正したものを再度掲載しておきます。",
+            downloadUrl: "/downloads/enshu1_6th_訂正版.pdf"
+          },
+          {
+            title: "enshu6.ipynb",
+            fileName: "enshu6.ipynb",
+            comment: "授業時のプログラムの例です",
+            downloadUrl: "/downloads/enshu6.ipynb"
+          }
+        ]
+      }
+    ],
+    assignments: [],
+    quizzes: [],
   },
   {
     code: "1X007",

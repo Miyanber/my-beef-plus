@@ -100,14 +100,13 @@ export default async function CoursePage({ params }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            <tr className="hover:bg-gray-50">
-              <td className="py-2.5 font-bold text-blue-800 hover:underline cursor-pointer">第11回の内容</td>
-              <td className="py-2.5 text-gray-600">2026/06/29 00:00 〜 9999/12/31 00:00</td>
-            </tr>
-            <tr className="hover:bg-gray-50">
-              <td className="py-2.5 font-bold text-blue-800 hover:underline cursor-pointer">授業予定</td>
-              <td className="py-2.5 text-gray-600">2026/04/10 00:00 〜 9999/12/31 00:00</td>
-            </tr>
+            {course.announcements && course.announcements.map(announcement => (
+              <tr className="hover:bg-gray-50" key={announcement.postingPeriod.start}>
+                <td className="py-2.5 font-bold text-blue-800 hover:underline cursor-pointer">{announcement.title}</td>
+                <td className="py-2.5 text-gray-600">{announcement.postingPeriod.start} 〜 {announcement.postingPeriod.end}</td>
+              </tr>
+            ))}
+
           </tbody>
         </table>
       </SectionWrapper>
@@ -116,78 +115,37 @@ export default async function CoursePage({ params }: Props) {
       <SectionWrapper title="教材" bgColor="bg-[#4ba3c3]" icon={<Edit3 size={24} />}>
         <div className="space-y-4 text-xs">
           {/* 演習問題 */}
-          <div className="bg-[#e2e8cc] p-3 rounded-sm">
-            <div className="font-bold mb-1">演習問題</div>
-            <div className="text-gray-600 mb-2">公開期間：2026/06/23 12:00 〜 9999/12/31 23:59</div>
-            <p className="text-gray-700 mb-3 pl-1">第10回までの分です。</p>
-            <table className="w-full border-t border-gray-300 pt-2">
-              <thead>
-                <tr className="text-gray-500 font-medium text-left">
-                  <th className="py-1 w-1/3">資料タイトル</th>
-                  <th className="py-1 w-1/3">ファイル名</th>
-                  <th className="py-1 w-1/3">コメント</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t border-dashed border-gray-300">
-                  <td className="py-2 font-bold text-blue-800 hover:underline cursor-pointer">exercise.pdf</td>
-                  <td className="py-2 text-gray-600">exercise.pdf</td>
-                  <td className="py-2 text-gray-400">-</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+          {course.lectureMaterials && course.lectureMaterials.map(material => (
+            <div key={material.title} className="bg-[#e2e8cc] p-3 rounded-sm">
+              <div className="font-bold mb-1">{material.title}</div>
+              <div className="text-gray-600 mb-2">公開期間：{material.publicationPeriod.start} 〜 {material.publicationPeriod.end}</div>
+              <div className="text-gray-700 mb-3 pl-1" dangerouslySetInnerHTML={{ __html: material.description }}></div>
+              {material.attachments.length > 0 && (
+                <table className="w-full border-t border-gray-300 pt-2">
+                  <thead>
+                    <tr className="text-gray-500 font-medium text-left">
+                      <th className="py-1 w-1/3">資料タイトル</th>
+                      <th className="py-1 w-1/3">ファイル名</th>
+                      <th className="py-1 w-1/3">コメント</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {material.attachments.map(attachment => (
+                      <tr key={attachment.downloadUrl} className="border-t border-dashed border-gray-300">
+                        <td className="py-2 font-bold text-blue-800 hover:underline cursor-pointer">
+                          <a href={attachment.downloadUrl}>{attachment.title}</a>
+                        </td>
+                        <td className="py-2 text-gray-600">{attachment.fileName}</td>
+                        <td className="py-2 text-gray-400">{attachment.comment}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
 
-          {/* 演習問題略解 */}
-          <div className="bg-[#e2e8cc] p-3 rounded-sm">
-            <div className="font-bold mb-1">演習問題略解</div>
-            <div className="text-gray-600 mb-2">公開期間：2026/04/26 00:00 〜 9999/12/31 23:59</div>
-            <p className="text-gray-700 mb-3 pl-1">第10回までの分です。</p>
-            <table className="w-full border-t border-gray-300 pt-2">
-              <thead>
-                <tr className="text-gray-500 font-medium text-left">
-                  <th className="py-1 w-1/3">資料タイトル</th>
-                  <th className="py-1 w-1/3">ファイル名</th>
-                  <th className="py-1 w-1/3">コメント</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t border-dashed border-gray-300">
-                  <td className="py-2 font-bold text-blue-800 hover:underline cursor-pointer">answer.pdf</td>
-                  <td className="py-2 text-gray-600">answer.pdf</td>
-                  <td className="py-2 text-gray-400">-</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+            </div>
+          ))}
 
-          {/* 追加資料 */}
-          <div className="bg-[#e2e8cc] p-3 rounded-sm">
-            <div className="font-bold mb-1">追加資料</div>
-            <div className="text-gray-600 mb-2">公開期間：2026/04/17 00:00 〜 9999/12/31 23:59</div>
-            <p className="text-gray-700 mb-3 pl-1">教科書に載っていない内容についての追加資料です。</p>
-            <table className="w-full border-t border-gray-300 pt-2">
-              <thead>
-                <tr className="text-gray-500 font-medium text-left">
-                  <th className="py-1 w-1/3">資料タイトル</th>
-                  <th className="py-1 w-1/3">ファイル名</th>
-                  <th className="py-1 w-1/3">コメント</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dashed divide-gray-300">
-                <tr>
-                  <td className="py-2 font-bold text-blue-800 hover:underline cursor-pointer">260428.pdf</td>
-                  <td className="py-2 text-gray-600">260428.pdf</td>
-                  <td className="py-2 text-gray-400">-</td>
-                </tr>
-                <tr>
-                  <td className="py-2 font-bold text-blue-800 hover:underline cursor-pointer">260421.pdf</td>
-                  <td className="py-2 text-gray-600">260421.pdf</td>
-                  <td className="py-2 text-gray-400">-</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
         </div>
       </SectionWrapper>
 
