@@ -1,6 +1,6 @@
-export type CourseColor = "violet" | "blue" | "sky" | "amber" | "rose" | "teal"
+export type CourseColor = "violet" | "blue" | "sky" | "amber" | "rose" | "teal";
 
-export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri"
+export type DayKey = "mon" | "tue" | "wed" | "thu" | "fri";
 
 export const DAYS: { key: DayKey; label: string; sub: string }[] = [
   { key: "mon", label: "月", sub: "Mon" },
@@ -8,9 +8,9 @@ export const DAYS: { key: DayKey; label: string; sub: string }[] = [
   { key: "wed", label: "水", sub: "Wed" },
   { key: "thu", label: "木", sub: "Thu" },
   { key: "fri", label: "金", sub: "Fri" },
-]
+];
 
-export const PERIODS = [1, 2, 3, 4, 5, 6]
+export const PERIODS = [1, 2, 3, 4, 5, 6];
 
 interface Message {
   title: string;
@@ -43,41 +43,53 @@ interface LectureMaterial {
 
 // 資料ファイル
 interface Attachment {
-  title: string;        // 資料タイトル (exercise.pdf)
-  fileName: string;     // ファイル名 (exercise.pdf)
-  comment: string;      // コメント (空文字)
-  downloadUrl: string;  // 実際のファイルURL
+  title: string; // 資料タイトル (exercise.pdf)
+  fileName: string; // ファイル名 (exercise.pdf)
+  comment: string; // コメント (空文字)
+  downloadUrl: string; // 実際のファイルURL
 }
 
 // 課題
 interface Assignment {
-  id: string;           // 課題を一意に識別するID
-  title: string;        // 課題タイトル (演習問題 (2026/6/16・6/23))
-  submissionPeriod: {   // 提出期間
-    start: string;      // 提出開始日 (2026/06/16 12:00)
-    end: string;        // 提出終了日 (2026/06/27 00:00)
+  id: string; // 課題を一意に識別するID
+  title: string; // 課題タイトル (演習問題 (2026/6/16・6/23))
+  submissionPeriod: {
+    // 提出期間
+    start: string; // 提出開始日 (2026/06/16 12:00)
+    end: string; // 提出終了日 (2026/06/27 00:00)
   };
-  submissionStatus: "SUBMITTED_ON_TIME" | "NOT_SUBMITTED_YET" | "SUBMITTED_OUT_TIME";    // 提出状況 (期限内提出)
-  url: string;          // 課題提出ページへのURL
+  submissionStatus:
+    | "SUBMITTED_ON_TIME"
+    | "NOT_SUBMITTED_YET"
+    | "SUBMITTED_OUT_TIME"; // 提出状況 (期限内提出)
+  url: string; // 課題提出ページへのURL
 }
 
 interface Quiz {
-  id: string;                  // テストを一意に識別するID
-  title: string;               // テストタイトル (第11回テスト)
-  examinationPeriod: {         // 解答期間・期限
-    start: string;             // 開始日時 (2026/06/26 10:40)
-    end: string;               // 終了日時・期限 (2026/06/26 12:15)
+  id: string; // テストを一意に識別するID
+  title: string; // テストタイトル (第11回テスト)
+  examinationPeriod: {
+    // 解答期間・期限
+    start: string; // 開始日時 (2026/06/26 10:40)
+    end: string; // 終了日時・期限 (2026/06/26 12:15)
   };
-  status: QuizStatus;          // 解答ステータス (解答済)
-  resultUrl?: string;             // 結果ページへのURL (解答済の場合のみ)
-  answerUrl?: string;             // 解答ページへのURL (解答済の場合のみ)
+  status: QuizStatus; // 解答ステータス (解答済)
+  resultUrl?: string; // 結果ページへのURL (解答済の場合のみ)
+  answerUrl?: string; // 解答ページへのURL (解答済の場合のみ)
 }
 
 // ステータスを型安全に管理する場合のEnum例
-type QuizStatus = 'COMPLETED' | 'UNANSWERED' | 'EXPIRED'; // 解答済, 未解答, 期間外 など
+type QuizStatus = "COMPLETED" | "UNANSWERED" | "EXPIRED"; // 解答済, 未解答, 期間外 など
 
-interface bulletinBoard {
-
+export interface BulletinBoardItem {
+  id: string; // 掲示板アイテムを一意に識別するID
+  title: string; // テーマタイトル
+  // 投稿期間・期限
+  postingPeriod: {
+    start: string; // 開始日時
+    end: string; // 終了日時・期限
+  };
+  url: string; // 詳細ページへのURL
 }
 
 // 1つの授業を表すインターフェース（再利用性が高い）
@@ -86,18 +98,19 @@ export interface Course {
   title: string;
   teachers: string[]; // カンマ区切りの文字列から「配列」に変更
   color: CourseColor;
-  day: DayKey;        // 曜日をデータ側に持たせる
-  period: number;     // 時限（コマ）をデータ側に持たせる
+  day: DayKey; // 曜日をデータ側に持たせる
+  period: number; // 時限（コマ）をデータ側に持たせる
   courseSummary?: string; // コースの概要説明
   classDetails?: {
     innerHTML: string;
     updatedAt: string;
-  };  // 授業情報
+  }; // 授業情報
   messages?: Message[]; // 担当者へのメッセージ
   announcements?: Announcement[]; // お知らせ
   lectureMaterials?: LectureMaterial[]; // 教材
   assignments?: Assignment[]; // 課題
   quizzes?: Quiz[]; // テスト
+  bulletinBoardItems?: BulletinBoardItem[];
 }
 
 // 汎用的なフラット配列
@@ -105,7 +118,16 @@ export const COURSES: Course[] = [
   {
     code: "CS101",
     title: "情報科学概論",
-    teachers: ["神戸 太郎", "六甲 次郎", "灘 三郎", "東灘 四郎", "須磨 五郎", "垂水 六郎", "兵庫 七郎", "長田 八郎"],
+    teachers: [
+      "神戸 太郎",
+      "六甲 次郎",
+      "灘 三郎",
+      "東灘 四郎",
+      "須磨 五郎",
+      "垂水 六郎",
+      "兵庫 七郎",
+      "長田 八郎",
+    ],
     color: "blue",
     day: "wed",
     period: 1,
@@ -145,14 +167,25 @@ export const COURSES: Course[] = [
   {
     code: "CS102",
     title: "基礎演習A",
-    teachers: ["山手 翔太", "Prof. Sample A", "浜辺 亮", "港 雄大", "担当教員グループ", "明石 誠", "長田 八郎", "芦屋 蓮", "西宮 陽介"],
+    teachers: [
+      "山手 翔太",
+      "Prof. Sample A",
+      "浜辺 亮",
+      "港 雄大",
+      "担当教員グループ",
+      "明石 誠",
+      "長田 八郎",
+      "芦屋 蓮",
+      "西宮 陽介",
+    ],
     color: "blue",
     day: "fri",
     period: 2,
-    courseSummary: "本講義では、基礎的な理論と応用手法について段階的に学習します。各回の演習を通じて理解を深め、実践的な問題解決能力を養います。",
+    courseSummary:
+      "本講義では、基礎的な理論と応用手法について段階的に学習します。各回の演習を通じて理解を深め、実践的な問題解決能力を養います。",
     classDetails: {
       innerHTML: `<p>本講義のシラバスおよび各回の実施計画です（サンプルデータ）。</p>`,
-      updatedAt: `2026/04/09 15:55`
+      updatedAt: `2026/04/09 15:55`,
     },
     messages: [],
     announcements: [
@@ -163,15 +196,15 @@ export const COURSES: Course[] = [
           end: "9999/12/31 00:00",
         },
         sender: "神戸　太郎",
-        content: `<p>次回の講義に関する連絡事項です。</p><p>詳細は授業ページをご確認ください。</p><p>質問がある場合はメッセージ機能よりご連絡ください。</p>`
-      }
+        content: `<p>次回の講義に関する連絡事項です。</p><p>詳細は授業ページをご確認ください。</p><p>質問がある場合はメッセージ機能よりご連絡ください。</p>`,
+      },
     ],
     lectureMaterials: [
       {
         title: "第6回授業資料",
         publicationPeriod: {
           start: "2026/05/21 00:00",
-          end: "9999/12/31 23:59"
+          end: "9999/12/31 23:59",
         },
         description: "<p>第1回（4/10）授業資料です。</p>",
         attachments: [
@@ -179,25 +212,176 @@ export const COURSES: Course[] = [
             title: "sample_material_1.pdf",
             fileName: "sample_material_1.pdf",
             comment: "",
-            downloadUrl: "/downloads/sample_material_1.pdf"
+            downloadUrl: "/downloads/sample_material_1.pdf",
           },
           {
             title: "sample_material_1_rev.pdf",
             fileName: "sample_material_1_rev.pdf",
-            comment: "課題の問題に訂正があったので、訂正したものを再度掲載しておきます。",
-            downloadUrl: "/downloads/sample_material_1_rev.pdf"
+            comment:
+              "課題の問題に訂正があったので、訂正したものを再度掲載しておきます。",
+            downloadUrl: "/downloads/sample_material_1_rev.pdf",
           },
           {
             title: "sample_notebook.ipynb",
             fileName: "sample_notebook.ipynb",
             comment: "授業時のプログラムの例です",
-            downloadUrl: "/downloads/sample_notebook.ipynb"
-          }
-        ]
-      }
+            downloadUrl: "/downloads/sample_notebook.ipynb",
+          },
+        ],
+      },
     ],
-    assignments: [],
-    quizzes: [],
+    assignments: [
+      {
+        id: "asg-001",
+        title: "演習問題 (2026/16・6/23)",
+        submissionPeriod: {
+          start: "2026/06/16 12:00",
+          end: "2026/06/27 00:00",
+        },
+        submissionStatus: "SUBMITTED_ON_TIME",
+        url: "/assignments/1",
+      },
+      {
+        id: "asg-002",
+        title: "演習問題 (2026/6/2)",
+        submissionPeriod: {
+          start: "2026/06/02 12:00",
+          end: "2026/06/06 00:00",
+        },
+        submissionStatus: "SUBMITTED_ON_TIME",
+        url: "/assignments/2",
+      },
+      {
+        id: "asg-003",
+        title: "演習問題 (2026/5/19)",
+        submissionPeriod: {
+          start: "2026/05/19 11:50",
+          end: "2026/05/23 00:00",
+        },
+        submissionStatus: "SUBMITTED_ON_TIME",
+        url: "/assignments/3",
+      },
+      {
+        id: "asg-004",
+        title: "演習問題 (2026/4/28)",
+        submissionPeriod: {
+          start: "2026/04/28 11:50",
+          end: "2026/05/02 00:00",
+        },
+        submissionStatus: "SUBMITTED_ON_TIME",
+        url: "/assignments/4",
+      },
+      {
+        id: "asg-005",
+        title: "演習問題 (2026/4/21)",
+        submissionPeriod: {
+          start: "2026/04/21 11:50",
+          end: "2026/04/25 00:00",
+        },
+        submissionStatus: "SUBMITTED_ON_TIME",
+        url: "/assignments/5",
+      },
+    ],
+    quizzes: [
+      {
+        id: "quiz-011",
+        title: "第11回テスト",
+        examinationPeriod: {
+          start: "2026/06/26 10:40",
+          end: "2026/06/26 12:15",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/11/result",
+        answerUrl: "/quizzes/11/answer",
+      },
+      {
+        id: "quiz-010",
+        title: "第10回テスト",
+        examinationPeriod: {
+          start: "2026/06/19 11:00",
+          end: "2026/06/19 12:15",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/10/result",
+        answerUrl: "/quizzes/10/answer",
+      },
+      {
+        id: "quiz-009",
+        title: "第9回テスト",
+        examinationPeriod: {
+          start: "2026/06/12 11:00",
+          end: "2026/06/12 12:20",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/9/result",
+        answerUrl: "/quizzes/9/answer",
+      },
+      {
+        id: "quiz-008",
+        title: "第8回テスト",
+        examinationPeriod: {
+          start: "2026/06/05 11:00",
+          end: "2026/06/05 12:10",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/8/result",
+        answerUrl: "/quizzes/8/answer",
+      },
+      {
+        id: "quiz-007",
+        title: "第7回テスト",
+        examinationPeriod: {
+          start: "2026/05/29 11:00",
+          end: "2026/05/29 12:10",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/7/result",
+        answerUrl: "/quizzes/7/answer",
+      },
+      {
+        id: "quiz-006",
+        title: "第6回テスト",
+        examinationPeriod: {
+          start: "2026/05/22 11:00",
+          end: "2026/05/22 12:20",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/6/result",
+        answerUrl: "/quizzes/6/answer",
+      },
+      {
+        id: "quiz-005",
+        title: "第5回テスト",
+        examinationPeriod: {
+          start: "2026/05/15 11:00",
+          end: "2026/05/15 11:20",
+        },
+        status: "COMPLETED",
+        resultUrl: "/quizzes/5/result",
+        answerUrl: "/quizzes/5/answer",
+      },
+    ],
+    bulletinBoardItems: [
+      {
+        id: "bbs-001",
+        title:
+          "サンプル掲示板お知らせ 1",
+        postingPeriod: {
+          start: "2026/06/17 13:30",
+          end: "9999/12/31 00:00",
+        },
+        url: "/bbs/1",
+      },
+      {
+        id: "bbs-002",
+        title: "サンプル掲示板お知らせ 2",
+        postingPeriod: {
+          start: "2026/05/13 00:00",
+          end: "9999/12/31 00:00",
+        },
+        url: "/bbs/2",
+      },
+    ],
   },
   {
     code: "CS103",
@@ -288,4 +472,4 @@ export const COLOR_STYLES: Record<
     title: "text-teal-950",
     teacher: "text-teal-700/80",
   },
-}
+};
