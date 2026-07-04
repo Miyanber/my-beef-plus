@@ -1,5 +1,5 @@
 import React from 'react';
-import { Mail, Bell, FileText, Edit3 } from 'lucide-react'; // アイコン用にlucide-reactを使用（お好みのものに変えてもOKです）
+import { Mail, Bell, FileText, FilePenLine, Edit3, MoreVertical, MessageSquare } from 'lucide-react'; // アイコン用にlucide-reactを使用（お好みのものに変えてもOKです）
 import { COURSES } from '@/lib/timetable-data';
 import { notFound } from 'next/navigation';
 
@@ -162,24 +162,83 @@ export default async function CoursePage({ params }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {[
-              { title: '演習問題 (2026/16・6/23)', start: '2026/06/16 12:00', end: '2026/06/27 00:00' },
-              { title: '演習問題 (2026/6/2)', start: '2026/06/02 12:00', end: '2026/06/06 00:00' },
-              { title: '演習問題 (2026/5/19)', start: '2026/05/19 11:50', end: '2026/05/23 00:00' },
-              { title: '演習問題 (2026/4/28)', start: '2026/04/28 11:50', startRaw: '04/28', end: '2026/05/02 00:00' },
-              { title: '演習問題 (2026/4/21)', start: '2026/04/21 11:50', end: '2026/04/25 00:00' },
-            ].map((item, idx) => (
+            {course.assignments && course.assignments.map((item, idx) => (
               <tr key={idx} className="hover:bg-gray-50">
                 <td className="py-3 font-bold text-blue-800 hover:underline cursor-pointer">{item.title}</td>
-                <td className="py-3 text-gray-600">{item.start}</td>
-                <td className="py-3 text-gray-600">{item.end}</td>
-                <td className="py-3 text-green-700 font-medium">期限内提出</td>
+                <td className="py-3 text-gray-600">{item.submissionPeriod.start}</td>
+                <td className="py-3 text-gray-600">{item.submissionPeriod.end}</td>
+                <td className="py-3 text-green-700 font-medium">{item.submissionStatus}</td>
                 <td className="py-3 text-center">
                   {/* 操作ボタン風のドット三つメニュー */}
                   <button className="inline-flex flex-col gap-0.5 items-center justify-center w-6 h-6 rounded-full bg-gray-700 text-white hover:bg-gray-800 transition">
                     <span className="w-1 h-1 bg-white rounded-full">A</span>
                     <span className="w-1 h-1 bg-white rounded-full">B</span>
                     <span className="w-1 h-1 bg-white rounded-full">C</span>
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SectionWrapper>
+
+      {/* テスト */}
+      <SectionWrapper title="テスト" bgColor="bg-[#3b78be]" icon={<FilePenLine size={24} />}>
+        <table className="w-full text-left text-xs border-collapse min-w-[600px]">
+          <thead>
+            <tr className="border-b border-gray-300 text-gray-700 font-medium">
+              <th className="pb-3 pt-2 pl-4 w-4/12">テストタイトル ▽</th>
+              <th className="pb-3 pt-2 w-4/12">解答期間・期限 ▽</th>
+              <th className="pb-3 pt-2 w-2/12">解答ステータス ▽</th>
+              <th className="pb-3 pt-2 pr-4 w-2/12 text-center">操作</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {course.quizzes && course.quizzes.map((item, idx) => (
+              <tr key={idx} className="hover:bg-gray-100 even:bg-[#fdfaf2] transition-colors">
+                <td className="py-4 pl-4 font-bold text-blue-800 hover:underline cursor-pointer">
+                  {item.title}
+                </td>
+                <td className="py-4 text-gray-500">
+                  {item.examinationPeriod.start} ～ {item.examinationPeriod.end}
+                </td>
+                <td className="py-4 text-gray-700">
+                  {item.status}
+                </td>
+                <td className="py-4 pr-4 text-center">
+                  {/* 操作ボタン（丸背景＋縦の3点リーダー） */}
+                  <button className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#555555] text-white hover:bg-gray-800 transition">
+                    <MoreVertical size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </SectionWrapper>
+
+      <SectionWrapper title="掲示板" bgColor="bg-[#358f80]" icon={<MessageSquare size={24} />}>
+        <table className="w-full text-left text-xs border-collapse min-w-[600px]">
+          <thead>
+            <tr className="border-b border-gray-300 text-gray-700 font-medium">
+              <th className="pb-3 pt-2 pl-4 w-7/12">テーマタイトル ▽</th>
+              <th className="pb-3 pt-2 w-4/12">投稿期間・期限 ▽</th>
+              <th className="pb-3 pt-2 pr-4 w-1/12 text-center">操作</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {course.bulletinBoardItems && course.bulletinBoardItems.map((item) => (
+              <tr key={item.id} className="hover:bg-gray-100 even:bg-[#fdfaf2] transition-colors">
+                <td className="py-4 pl-4 font-bold text-blue-800 hover:underline cursor-pointer">
+                  <a href={item.url}>{item.title}</a>
+                </td>
+                <td className="py-4 text-gray-500">
+                  {item.postingPeriod.start} ~ {item.postingPeriod.end}
+                </td>
+                <td className="py-4 pr-4 text-center">
+                  {/* 操作ボタン（丸背景＋縦の3点リーダー） */}
+                  <button className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-[#555555] text-white hover:bg-gray-800 transition">
+                    <MoreVertical size={16} />
                   </button>
                 </td>
               </tr>
