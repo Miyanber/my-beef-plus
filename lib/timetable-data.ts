@@ -19,21 +19,62 @@ interface Message {
   url: string;
 }
 
+// お知らせ
 interface Announcement {
-
+  title: string;
+  postingPeriod: {
+    start: string;
+    end: string;
+  };
+  sender: string;
+  content: string; // HTML
 }
 
-interface Material {
-
+// 教材
+interface LectureMaterial {
+  title: string;
+  publicationPeriod: {
+    start: string;
+    end: string;
+  };
+  description: string;
+  attachments: Attachment[];
 }
 
-interface assignment {
-
+// 資料ファイル
+interface Attachment {
+  title: string;        // 資料タイトル (exercise.pdf)
+  fileName: string;     // ファイル名 (exercise.pdf)
+  comment: string;      // コメント (空文字)
+  downloadUrl: string;  // 実際のファイルURL
 }
 
-interface exam {
-
+// 課題
+interface Assignment {
+  id: string;           // 課題を一意に識別するID
+  title: string;        // 課題タイトル (演習問題 (2026/6/16・6/23))
+  submissionPeriod: {   // 提出期間
+    start: string;      // 提出開始日 (2026/06/16 12:00)
+    end: string;        // 提出終了日 (2026/06/27 00:00)
+  };
+  submissionStatus: "SUBMITTED_ON_TIME" | "NOT_SUBMITTED_YET" | "SUBMITTED_OUT_TIME";    // 提出状況 (期限内提出)
+  url: string;          // 課題提出ページへのURL
 }
+
+interface Quiz {
+  id: string;                  // テストを一意に識別するID
+  title: string;               // テストタイトル (第11回テスト)
+  examinationPeriod: {         // 解答期間・期限
+    start: string;             // 開始日時 (2026/06/26 10:40)
+    end: string;               // 終了日時・期限 (2026/06/26 12:15)
+  };
+  status: QuizStatus;          // 解答ステータス (解答済)
+  resultUrl?: string;             // 結果ページへのURL (解答済の場合のみ)
+  answerUrl?: string;             // 解答ページへのURL (解答済の場合のみ)
+}
+
+// ステータスを型安全に管理する場合のEnum例
+type QuizStatus = 'COMPLETED' | 'UNANSWERED' | 'EXPIRED'; // 解答済, 未解答, 期間外 など
 
 interface bulletinBoard {
 
@@ -52,6 +93,11 @@ export interface Course {
     innerHTML: string;
     updatedAt: string;
   };  // 授業情報
+  messages?: Message[]; // 担当者へのメッセージ
+  announcements?: Announcement[]; // お知らせ
+  lectureMaterials?: LectureMaterial[]; // 教材
+  assignments?: Assignment[]; // 課題
+  quizzes?: Quiz[]; // テスト
 }
 
 // 汎用的なフラット配列
@@ -63,11 +109,6 @@ export const COURSES: Course[] = [
     color: "blue",
     day: "wed",
     period: 1,
-    courseSummary: "本講義では、基礎的な理論と応用手法について段階的に学習します。各回の演習を通じて理解を深め、実践的な問題解決能力を養います。",
-    classDetails: {
-      innerHTML: `<p>本講義のシラバスおよび各回の実施計画です（サンプルデータ）。</p>`,
-      updatedAt: `2026/04/09 15:55`
-    }
   },
   {
     code: "MA102",
@@ -108,6 +149,55 @@ export const COURSES: Course[] = [
     color: "blue",
     day: "fri",
     period: 2,
+    courseSummary: "本講義では、基礎的な理論と応用手法について段階的に学習します。各回の演習を通じて理解を深め、実践的な問題解決能力を養います。",
+    classDetails: {
+      innerHTML: `<p>本講義のシラバスおよび各回の実施計画です（サンプルデータ）。</p>`,
+      updatedAt: `2026/04/09 15:55`
+    },
+    messages: [],
+    announcements: [
+      {
+        title: "第11回の講義について",
+        postingPeriod: {
+          start: "2026/06/26 07:50",
+          end: "9999/12/31 00:00",
+        },
+        sender: "神戸　太郎",
+        content: `<p>次回の講義に関する連絡事項です。</p><p>詳細は授業ページをご確認ください。</p><p>質問がある場合はメッセージ機能よりご連絡ください。</p>`
+      }
+    ],
+    lectureMaterials: [
+      {
+        title: "第6回授業資料",
+        publicationPeriod: {
+          start: "2026/05/21 00:00",
+          end: "9999/12/31 23:59"
+        },
+        description: "<p>第1回（4/10）授業資料です。</p>",
+        attachments: [
+          {
+            title: "sample_material_1.pdf",
+            fileName: "sample_material_1.pdf",
+            comment: "",
+            downloadUrl: "/downloads/sample_material_1.pdf"
+          },
+          {
+            title: "sample_material_1_rev.pdf",
+            fileName: "sample_material_1_rev.pdf",
+            comment: "課題の問題に訂正があったので、訂正したものを再度掲載しておきます。",
+            downloadUrl: "/downloads/sample_material_1_rev.pdf"
+          },
+          {
+            title: "sample_notebook.ipynb",
+            fileName: "sample_notebook.ipynb",
+            comment: "授業時のプログラムの例です",
+            downloadUrl: "/downloads/sample_notebook.ipynb"
+          }
+        ]
+      }
+    ],
+    assignments: [],
+    quizzes: [],
   },
   {
     code: "CS103",
