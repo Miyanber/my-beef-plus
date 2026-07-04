@@ -3,6 +3,7 @@
 import { MessageSquare, Bell } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import { ThemeToggle } from "../ThemeToggle"
 
 const LINKS = [
   { jp: "マニュアル", en: "Manual" },
@@ -63,6 +64,8 @@ export function TopHeader() {
       </nav>
 
       <Separator orientation="vertical" className="h-6" />
+
+      <ThemeToggle />
 
       <div className="flex items-center gap-2.5">
         <Avatar className="size-9 border border-border shadow-sm">
