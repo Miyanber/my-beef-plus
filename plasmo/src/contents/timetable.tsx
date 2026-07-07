@@ -2,7 +2,6 @@
 import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo"
 
 // コンポーネントのパスは環境に合わせて適宜微調整してください
-import { AppSidebar } from "@/components/timetable/app-sidebar"
 import { useEffect, useState } from "react"
 import { CalendarRange } from "lucide-react"
 import { ControlBar } from "@/components/timetable/control-bar"
@@ -146,8 +145,8 @@ const PlasmoSidebarOverlay = () => {
 						</div>
 					</div>
 
-					<ControlBar />
 					<TimetableGrid courses={courses} />
+					<ControlBar />
 				</div>
 			</main>
 		</DefaultLayout>
