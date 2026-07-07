@@ -2,8 +2,6 @@ import cssText from "data-text:~style.css"
 import type { PlasmoCSConfig } from "plasmo"
 import { useEffect } from "react"
 
-import { CountButton } from "~features/count-button"
-
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/*"]
 }
@@ -44,11 +42,7 @@ const PlasmoOverlay = () => {
     document.body.classList.add("font-sans", "antialiased");
   });
 
-  return (
-    <div className="plasmo-z-50 plasmo-flex plasmo-fixed plasmo-top-32 plasmo-right-8">
-      <CountButton />
-    </div>
-  )
+  return <></>
 }
 
 export default PlasmoOverlay
