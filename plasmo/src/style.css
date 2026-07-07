@@ -7,10 +7,16 @@
 #plasmo-shadow-container {
   all: initial;
   box-sizing: border-box;
+  display: block;
+  width: 100%;
 }
 
 #plasmo-shadow-container>div {
   width: 100%;
+}
+
+#contentsWrapper {
+  display: none;
 }
 
 :root {

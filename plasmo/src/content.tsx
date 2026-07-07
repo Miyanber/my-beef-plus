@@ -5,7 +5,7 @@ import { useEffect } from "react"
 import { CountButton } from "~features/count-button"
 
 export const config: PlasmoCSConfig = {
-  matches: ["<all_urls>"]
+  matches: ["https://beefplus.center.kobe-u.ac.jp/lms/*"]
 }
 
 /**
