@@ -11,10 +11,23 @@ import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
 
 export const config: PlasmoCSConfig = {
-	matches: ["<all_urls>"]
+	matches: ["<all_urls>"],
+	run_at: "document_end"
 }
 
-
+export const getRenderRoot = () => {
+  let container = document.getElementById("my-custom-lms-root")
+  if (!container) {
+    container = document.createElement("div")
+    container.id = "my-custom-lms-root"
+    
+    // 🌟 外枠の div 自体を「画面全開の fixed」かつ「はみ出し禁止（overflow-hidden）」にする
+    container.className = "fixed inset-0 w-screen h-screen z-[2147483647] overflow-hidden bg-background flex font-sans antialiased"
+    
+    document.body.appendChild(container)
+  }
+  return container
+}
 
 
 export const getStyle = getDefaultStyle
