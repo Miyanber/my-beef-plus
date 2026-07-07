@@ -54,7 +54,7 @@ export function AppSidebar() {
       {/* 2. PC用：開閉可能なサイドバー（md以上で表示） */}
       <aside
         className={cn(
-          "hidden md:flex shrink-0 flex-col gap-8 bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 h-screen fixed top-0",
+          "hidden md:flex shrink-0 flex-col gap-8 bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 h-screen sticky top-0",
           isOpen ? "w-72" : "w-20 px-4"
         )}
       >
