@@ -15,11 +15,11 @@ import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 const NAV_ITEMS = [
-  { label: "HOME", path: "/", icon: Home },
-  { label: "課題・テスト一覧", path: "/attachments", icon: ClipboardList },
-  { label: "授業情報", path: "/classes", icon: BookOpen },
-  { label: "コース検索", path: "/search", icon: Search },
-  { label: "BEEF+ Venture", path: "/venture", icon: Sparkles },
+  { label: "HOME", path: "/lms/timetable", icon: Home },
+  { label: "課題・テスト一覧", path: "/lms/task", icon: ClipboardList },
+  { label: "授業情報", path: "/lms/online", icon: BookOpen },
+  { label: "コース検索", path: "/lms/course/search", icon: Search },
+  { label: "BEEF+ Venture", path: "https://ventureplus.center.kobe-u.ac.jp/login", icon: Sparkles },
 ]
 
 export function AppSidebar() {
@@ -33,7 +33,7 @@ export function AppSidebar() {
           <SheetTrigger>
             <div
               aria-label="メニューを開く"
-              className="flex size-9 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent"
+              className="flex size-8 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent"
             >
               <Menu className="size-5" />
             </div>
@@ -100,8 +100,8 @@ export function AppSidebar() {
 function LogoLockup({ isOpen }: { isOpen: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground shadow-sm">
-        <span className="text-lg font-bold tracking-tight">B</span>
+      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl text-sidebar-primary-foreground shadow-md">
+        <img className="w-9 font-bold tracking-tight" src="https://beefplus.center.kobe-u.ac.jp/favicon.ico" alt="BEEF+" />
       </div>
       {isOpen && (
         <div className="leading-tight whitespace-nowrap">
