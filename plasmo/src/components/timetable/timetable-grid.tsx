@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils"
 import {
   DAYS,
   PERIODS,
-  COURSES,
   COLOR_STYLES,
   type Course,
 } from "@/lib/timetable-data"
@@ -14,11 +13,12 @@ function CourseCard({ course }: { course: Course }) {
   const styles = COLOR_STYLES[course.color];
   return (
     <CustomLink
-      href={`/courses/${course.code}`}
+      href={`https://beefplus.center.kobe-u.ac.jp/lms/course?idnumber=${course.id}`}
       className={cn(
         "flex flex-col gap-2 border-2 p-3 transition-colors h-full justify-between", // 高さを揃えやすく
         styles.cell,
       )}
+      target="_self"
     >
       <div className="flex flex-col gap-1">
         <p className={cn("text-sm font-semibold leading-snug text-pretty line-clamp-2", styles.title)}>
@@ -30,13 +30,17 @@ function CourseCard({ course }: { course: Course }) {
         className={cn("text-xs leading-relaxed truncate", styles.teacher)}
         title={course.teachers.join(", ")} // ホバーした瞬間にフルネームがツールチップで出るようにしておく
       >
-        {course.teachers}
+        {course.teachers.join(", ")}
       </p>
     </CustomLink>
   )
 }
 
-export function TimetableGrid() {
+interface TimetableComponentProps {
+  courses: Course[]; // 親から受け取るデータの型を指定
+}
+
+export function TimetableGrid({ courses }: TimetableComponentProps) {
   const dayCount = DAYS.length
 
   return (
@@ -92,16 +96,16 @@ export function TimetableGrid() {
 
               {/* 各曜日の授業セル */}
               {DAYS.map((day) => {
-                const courses = COURSES.filter(course => course.day === day.key && course.period === period);
+                const filteredCourses = courses.filter(course => course.day === day.key && course.period === period);
 
                 return (
                   <div
                     key={day.key}
                     className="border-t-2 border-l-2 border-border/50 p-2 min-h-24 content-start"
                   >
-                    {courses.length > 0 && (
+                    {filteredCourses.length > 0 && (
                       <div className="flex flex-col">
-                        {courses.map((course) => (
+                        {filteredCourses.map((course) => (
                           <CourseCard key={course.code} course={course} />
                         ))}
                       </div>
