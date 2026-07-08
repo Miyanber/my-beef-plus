@@ -59,9 +59,9 @@ interface Assignment {
     end: string; // 提出終了日 (2026/06/27 00:00)
   };
   submissionStatus:
-    | "SUBMITTED_ON_TIME"
-    | "NOT_SUBMITTED_YET"
-    | "SUBMITTED_OUT_TIME"; // 提出状況 (期限内提出)
+  | "SUBMITTED_ON_TIME"
+  | "NOT_SUBMITTED_YET"
+  | "SUBMITTED_OUT_TIME"; // 提出状況 (期限内提出)
   url: string; // 課題提出ページへのURL
 }
 
@@ -92,25 +92,38 @@ export interface BulletinBoardItem {
   url: string; // 詳細ページへのURL
 }
 
-// 1つの授業を表すインターフェース（再利用性が高い）
-export interface Course {
-  id: string; // HTMLでのID
-  code: string;
-  title: string;
-  teachers: string[]; // カンマ区切りの文字列から「配列」に変更
+// 時間割の「枠」としての授業データ
+export interface TimetableCourse {
+  id: string;        // 固有ID (e.g., '20261X0521001')
+  code: string;      // 科目コード
+  title: string;     // 授業名
+  teachers: string[]; // 担当教員
   color: CourseColor;
-  day: DayKey; // 曜日をデータ側に持たせる
-  period: number; // 時限（コマ）をデータ側に持たせる
-  courseSummary?: string; // コースの概要説明
+  dates: Array<{
+    day: DayKey;
+    period: number;
+  }>;
+}
+
+// 時間割全体のストア型
+export interface TimetableStore {
+  lastUpdated: string; // タイムスタンプ
+  courses: Record<string, TimetableCourse>;
+}
+
+// 授業の「詳細・中身」のデータ（LMSから取得するような情報）
+export interface CourseDetail {
+  id: string; // TimetableCourse.id と紐づく
+  courseSummary?: string; 
   classDetails?: {
-    innerHTML: string;
-    updatedAt: string;
-  }; // 授業情報
-  messages?: Message[]; // 担当者へのメッセージ
-  announcements?: Announcement[]; // お知らせ
-  lectureMaterials?: LectureMaterial[]; // 教材
-  assignments?: Assignment[]; // 課題
-  quizzes?: Quiz[]; // テスト
+    rawHTML: string; // 危険性を意識しやすい命名に
+    updatedAt: string; // ISO 8601形式などの文字列、または number (ミリ秒)
+  };
+  messages?: Message[];
+  announcements?: Announcement[];
+  lectureMaterials?: LectureMaterial[];
+  assignments?: Assignment[];
+  quizzes?: Quiz[];
   bulletinBoardItems?: BulletinBoardItem[];
 }
 

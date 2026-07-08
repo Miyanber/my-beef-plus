@@ -4,12 +4,13 @@ import {
   DAYS,
   PERIODS,
   COLOR_STYLES,
-  type Course,
+  type TimetableStore,
+  type TimetableCourse,
 } from "@/lib/timetable-data"
 import React from "react"
 import { CustomLink } from "@/components/customLink"
 
-function CourseCard({ course }: { course: Course }) {
+function CourseCard({ course }: { course: TimetableCourse }) {
   const styles = COLOR_STYLES[course.color];
   return (
     <CustomLink
@@ -37,11 +38,12 @@ function CourseCard({ course }: { course: Course }) {
 }
 
 interface TimetableComponentProps {
-  courses: Course[]; // 親から受け取るデータの型を指定
+  timetableStore: TimetableStore; // 親から受け取るデータの型を指定
 }
 
-export function TimetableGrid({ courses }: TimetableComponentProps) {
+export function TimetableGrid({ timetableStore }: TimetableComponentProps) {
   const dayCount = DAYS.length
+  const courses = timetableStore ? timetableStore.courses : {};
 
   return (
     <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
@@ -96,7 +98,15 @@ export function TimetableGrid({ courses }: TimetableComponentProps) {
 
               {/* 各曜日の授業セル */}
               {DAYS.map((day) => {
-                const filteredCourses = courses.filter(course => course.day === day.key && course.period === period);
+                const filteredCourses = Object.values(courses)
+                  .filter(course => {
+                    for (const date of course.dates) {
+                      if (date.day === day.key && date.period === period) {
+                        return true
+                      }
+                    }
+                    return false;
+                  });
 
                 return (
                   <div
