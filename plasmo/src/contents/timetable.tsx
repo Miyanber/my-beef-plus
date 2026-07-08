@@ -10,6 +10,7 @@ import { TimetableGrid } from "@/components/timetable/timetable-grid"
 import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
 import type { DayKey, CourseColor, TimetableStore, TimetableCourse } from "@/lib/timetable-data"
+import { waitForSelector } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable*"],
@@ -103,8 +104,6 @@ const PlasmoSidebarOverlay = () => {
   const [timetableStore, setTimetableStore] = useStorage<TimetableStore>("timetableStore");
 
   useEffect(() => {
-    console.log("useEffect")
-
     const nowDate = new Date();
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -112,44 +111,19 @@ const PlasmoSidebarOverlay = () => {
     const isInitial = !timetableStore;
     const isExpired = timetableStore && (nowDate.getTime() - new Date(timetableStore.lastUpdated).getTime() > ONE_DAY);
 
-    console.log(isInitial || isExpired)
     if (isInitial || isExpired) {
-      // 既存の取得元データを引き継ぐか、新規で空オブジェクトを作成
-      const baseCourses = timetableStore?.courses || {};
+      const initTimetable = async () => {
+        const baseCourses = timetableStore?.courses || {};
 
-      // 既に画面にフォームが存在する場合の処理
-      const form = document.getElementById("selectTimetable") as HTMLFormElement;
-      if (form) {
-        document.getElementById("contentsWrapper").style.display = "none";
+        const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
         const parsedData = parseBEEFTimetable(baseCourses, form); // 引数を修正
+        document.getElementById("contentsWrapper").hidden = true;
         setTimetableStore({
           lastUpdated: nowDate.toISOString(),
           courses: parsedData
         });
-        form.style.display = "none";
       }
-
-      // DOMの描画を待つための MutationObserver
-      const observer = new MutationObserver((mutations, obs) => {
-        const form = document.getElementById("selectTimetable") as HTMLFormElement;
-        if (form) {
-          document.getElementById("contentsWrapper").style.display = "none";
-          const parsedData = parseBEEFTimetable(baseCourses, form); // 引数を修正
-          setTimetableStore({
-            lastUpdated: nowDate.toISOString(),
-            courses: parsedData
-          });
-          form.style.display = "none";
-          obs.disconnect(); // 目的の要素が見つかったら監視を終了
-        }
-      });
-
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-      });
-
-      return () => observer.disconnect();
+      initTimetable();
     }
   }, [timetableStore]);
 

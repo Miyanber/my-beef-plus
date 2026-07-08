@@ -8,6 +8,7 @@ import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
 import type { CourseDetail, Announcement, LectureMaterial, Attachment } from "@/lib/timetable-data"
 import { Bell, Edit3, FilePenLine, FileText, Mail, MessageSquare, MoreVertical } from "lucide-react"
+import { waitForSelector } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/course*"],
@@ -213,34 +214,17 @@ const PlasmoSidebarOverlay = () => {
     const isInitial = !courseDetail;
     const isExpired = courseDetail && (nowDate.getTime() - new Date(courseDetail.lastUpdated).getTime() > ONE_DAY);
 
-    if (isInitial || isExpired) {
+    // if (isInitial || isExpired) {
+    if (true) {
       // 既に画面にフォームが存在する場合の処理
-      const form = document.getElementById("courseTopForm") as HTMLFormElement;
-      if (form) {
-        document.getElementById("contentsWrapper").style.display = "none";
+      const initCourseDetail = async () => {
+        const form = await waitForSelector("#courseTopForm") as HTMLFormElement;
         const parsedData = parseCourseDetailHTML(id, courseDetail, form); // 引数を修正
+        document.getElementById("contentsWrapper").remove();
         setCourseDetail(parsedData);
-        form.style.display = "none";
       }
 
-      // DOMの描画を待つための MutationObserver
-      const observer = new MutationObserver((mutations, obs) => {
-        const form = document.getElementById("courseTopForm") as HTMLFormElement;
-        if (form) {
-          document.getElementById("contentsWrapper").style.display = "none";
-          const parsedData = parseCourseDetailHTML(id, courseDetail, form); // 引数を修正
-          setCourseDetail(parsedData);
-          form.style.display = "none";
-          obs.disconnect(); // 目的の要素が見つかったら監視を終了
-        }
-      });
-
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-      });
-
-      return () => observer.disconnect();
+      initCourseDetail();
     }
 
 

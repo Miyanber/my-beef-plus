@@ -33,7 +33,7 @@ function IconButton({
 
 export function TopHeader() {
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-end gap-4 border-b border-border bg-card/80 px-6 backdrop-blur">
+    <header className="sticky w-full top-0 z-20 flex h-16 items-center justify-end gap-4 border-b border-border bg-card/80 pl-6 pr-8 backdrop-blur">
       <div className="flex items-center gap-1">
         <IconButton label="メッセージ">
           <MessageSquare className="size-5" />
