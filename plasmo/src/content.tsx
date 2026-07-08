@@ -1,9 +1,11 @@
 import cssText from "data-text:~style.css"
 import type { PlasmoCSConfig } from "plasmo"
 import { useEffect } from "react"
+import { waitForSelector } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://beefplus.center.kobe-u.ac.jp/lms/*"]
+  matches: ["https://beefplus.center.kobe-u.ac.jp/lms/*"],
+  run_at: "document_start"
 }
 
 /**
@@ -39,7 +41,26 @@ export const getStyle = (): HTMLStyleElement => {
 const PlasmoOverlay = () => {
   // ここで主な JavaScript 処理を入れる
   useEffect(() => {
-    document.body.classList.add("font-sans", "antialiased");
+    (async () => {
+      await waitForSelector("body");
+      document.body.classList.add("font-sans", "antialiased");
+      document.body.style.setProperty("overflow-x", "hidden", "important");
+
+
+      await waitForSelector('meta[name="viewport"]');
+      let viewport = document.querySelector('meta[name="viewport"]');
+
+      if (viewport) {
+        // 既存のタグがあれば、initial-scale=1.0 を強制注入する
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+      } else {
+        // 万が一タグがなければ新しく生成して head に突っ込む
+        viewport = document.createElement('meta');
+        viewport.setAttribute('name', 'viewport');
+        viewport.setAttribute('content', 'width=device-width, initial-scale=1.0');
+        document.head.appendChild(viewport);
+      }
+    })();
   });
 
   return <></>
