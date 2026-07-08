@@ -20,7 +20,7 @@ interface Message {
 }
 
 // お知らせ
-interface Announcement {
+export interface Announcement {
   title: string;
   postingPeriod: {
     start: string;
@@ -31,7 +31,7 @@ interface Announcement {
 }
 
 // 教材
-interface LectureMaterial {
+export interface LectureMaterial {
   title: string;
   publicationPeriod: {
     start: string;
@@ -42,11 +42,11 @@ interface LectureMaterial {
 }
 
 // 資料ファイル
-interface Attachment {
+export interface Attachment {
   title: string; // 資料タイトル (exercise.pdf)
   fileName: string; // ファイル名 (exercise.pdf)
   comment: string; // コメント (空文字)
-  downloadUrl: string; // 実際のファイルURL
+  materialId: string; // HTML上の要素のID（クリック対象）
 }
 
 // 課題
@@ -114,6 +114,7 @@ export interface TimetableStore {
 // 授業の「詳細・中身」のデータ（LMSから取得するような情報）
 export interface CourseDetail {
   id: string; // TimetableCourse.id と紐づく
+  lastUpdated: string;
   courseSummary?: string; 
   classDetails?: {
     rawHTML: string; // 危険性を意識しやすい命名に

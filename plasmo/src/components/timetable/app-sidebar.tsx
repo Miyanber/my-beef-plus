@@ -11,8 +11,8 @@ import {
   Menu
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { useStorage } from "@plasmohq/storage/hook"
 
 const NAV_ITEMS = [
   { label: "HOME", path: "/lms/timetable", icon: Home },
@@ -23,7 +23,14 @@ const NAV_ITEMS = [
 ]
 
 export function AppSidebar() {
-  const [isOpen, setIsOpen] = useState(true) // PC用の開閉状態
+  // 初期値を undefined にして、ストレージ読み込み中であることを検知する
+  const [isOpen, setIsOpen] = useStorage<boolean>("isOpen", undefined) 
+
+  // 1. ストレージから値が返ってくるまでの「一瞬」のデフォルト値（開いた状態）
+  const isSidebarOpen = isOpen ?? true 
+
+  // 2. ストレージの読み込みが完了したかどうかのフラグ
+  const isReady = isOpen !== undefined
 
   return (
     <>
@@ -38,12 +45,9 @@ export function AppSidebar() {
               <Menu className="size-5" />
             </div>
           </SheetTrigger>
-          {/* side="left" で左からスライドイン */}
           <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border">
             <div className="flex flex-col gap-8 px-5 py-7">
-              {/* スマホ用ロゴ情報 */}
               <LogoLockup isOpen={true} />
-              {/* スマホ用ナビゲーション */}
               <Navigation isOpen={true} />
             </div>
           </SheetContent>
@@ -54,15 +58,18 @@ export function AppSidebar() {
       {/* 2. PC用：開閉可能なサイドバー（md以上で表示） */}
       <aside
         className={cn(
-          "hidden md:flex shrink-0 flex-col gap-8 bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border transition-all duration-300 h-screen sticky top-0",
-          isOpen ? "w-72" : "w-20 px-4"
+          "hidden md:flex shrink-0 flex-col gap-8 bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border h-screen sticky top-0",
+          // ストレージの読み込みが確定（isReady === true）するまでは、
+          // 幅が急激に変わるアニメーション（transition）を一時的にオフにしてチラつきを抹殺する
+          isReady ? "transition-all duration-300" : "transition-none",
+          isSidebarOpen ? "w-72" : "w-20 px-4"
         )}
       >
         {/* ロゴとPC用トグルボタン */}
-        <div className={cn("flex items-center", isOpen ? "justify-between" : "justify-center")}>
-          <LogoLockup isOpen={isOpen} />
+        <div className={cn("flex items-center", isSidebarOpen ? "justify-between" : "justify-center")}>
+          <LogoLockup isOpen={isSidebarOpen} />
           
-          {isOpen && (
+          {isSidebarOpen && (
             <button
               type="button"
               aria-label="サイドバーを折りたたむ"
@@ -75,7 +82,7 @@ export function AppSidebar() {
         </div>
 
         {/* 閉じた状態の時の展開ボタン */}
-        {!isOpen && (
+        {!isSidebarOpen && (
           <div className="flex justify-center">
             <button
               type="button"
@@ -89,7 +96,7 @@ export function AppSidebar() {
         )}
 
         {/* PC用ナビゲーション */}
-        <Navigation isOpen={isOpen} />
+        <Navigation isOpen={isSidebarOpen} />
       </aside>
     </>
   )
