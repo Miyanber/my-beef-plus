@@ -58,45 +58,48 @@ export function AppSidebar() {
       {/* 2. PC用：開閉可能なサイドバー（md以上で表示） */}
       <aside
         className={cn(
-          "hidden md:flex shrink-0 flex-col gap-8 bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border h-screen sticky top-0",
+          "hidden flex-shrink-0 md:block bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border top-0",
           // ストレージの読み込みが確定（isReady === true）するまでは、
           // 幅が急激に変わるアニメーション（transition）を一時的にオフにしてチラつきを抹殺する
           isReady ? "transition-all duration-300" : "transition-none",
           isSidebarOpen ? "w-72" : "w-20 px-4"
         )}
       >
-        {/* ロゴとPC用トグルボタン */}
-        <div className={cn("flex items-center", isSidebarOpen ? "justify-between" : "justify-center")}>
-          <LogoLockup isOpen={isSidebarOpen} />
-          
-          {isSidebarOpen && (
-            <button
-              type="button"
-              aria-label="サイドバーを折りたたむ"
-              onClick={() => setIsOpen(false)}
-              className="flex size-7 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-          )}
-        </div>
-
-        {/* 閉じた状態の時の展開ボタン */}
-        {!isSidebarOpen && (
-          <div className="flex justify-center">
-            <button
-              type="button"
-              aria-label="サイドバーを展開する"
-              onClick={() => setIsOpen(true)}
-              className="flex size-7 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            >
-              <ChevronRight className="size-4" />
-            </button>
+        {/* top-7 は aside の py-7 に合わせている */}
+        <div className="md:flex shrink-0 flex-col gap-8 sticky top-7 w-full">
+          {/* ロゴとPC用トグルボタン */}
+          <div className={cn("flex items-center", isSidebarOpen ? "justify-between" : "justify-center")}>
+            <LogoLockup isOpen={isSidebarOpen} />
+            
+            {isSidebarOpen && (
+              <button
+                type="button"
+                aria-label="サイドバーを折りたたむ"
+                onClick={() => setIsOpen(false)}
+                className="flex size-7 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <ChevronLeft className="size-4" />
+              </button>
+            )}
           </div>
-        )}
 
-        {/* PC用ナビゲーション */}
-        <Navigation isOpen={isSidebarOpen} />
+          {/* 閉じた状態の時の展開ボタン */}
+          {!isSidebarOpen && (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                aria-label="サイドバーを展開する"
+                onClick={() => setIsOpen(true)}
+                className="flex size-7 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+          )}
+
+          {/* PC用ナビゲーション */}
+          <Navigation isOpen={isSidebarOpen} />
+        </div>
       </aside>
     </>
   )
