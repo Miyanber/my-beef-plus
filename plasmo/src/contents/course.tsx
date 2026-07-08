@@ -217,6 +217,7 @@ const PlasmoSidebarOverlay = () => {
       // 既に画面にフォームが存在する場合の処理
       const form = document.getElementById("courseTopForm") as HTMLFormElement;
       if (form) {
+        document.getElementById("contentsWrapper").style.display = "none";
         const parsedData = parseCourseDetailHTML(id, courseDetail, form); // 引数を修正
         setCourseDetail(parsedData);
         form.style.display = "none";
@@ -226,6 +227,7 @@ const PlasmoSidebarOverlay = () => {
       const observer = new MutationObserver((mutations, obs) => {
         const form = document.getElementById("courseTopForm") as HTMLFormElement;
         if (form) {
+          document.getElementById("contentsWrapper").style.display = "none";
           const parsedData = parseCourseDetailHTML(id, courseDetail, form); // 引数を修正
           setCourseDetail(parsedData);
           form.style.display = "none";
