@@ -12,7 +12,7 @@ import { DefaultLayout } from "~pages/layout"
 import type { DayKey, CourseColor, TimetableStore, TimetableCourse } from "@/lib/timetable-data"
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable"],
+  matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable*"],
   run_at: "document_start"
 }
 
@@ -37,7 +37,6 @@ export function parseBEEFTimetable(timetableCourses: Record<string, TimetableCou
     dayKeys.forEach((dayKey, index) => {
       const colClass = `${index + 1}-yobicol`;
 
-      // 【修正箇所】数字から始まるクラス名に対応するため、属性セレクターに変更
       const cell = row.querySelector(`.div-table-cell[class*="${colClass}"]`);
       if (!cell) return;
 

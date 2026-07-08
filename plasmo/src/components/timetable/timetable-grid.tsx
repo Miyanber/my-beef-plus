@@ -16,19 +16,22 @@ function CourseCard({ course }: { course: TimetableCourse }) {
     <CustomLink
       href={`https://beefplus.center.kobe-u.ac.jp/lms/course?idnumber=${course.id}`}
       className={cn(
-        "flex flex-col gap-2 border-2 p-3 transition-colors h-full justify-between", // 高さを揃えやすく
+        "flex flex-col gap-2 border p-3 transition-colors h-full min-h-15 justify-between", // 高さを揃えやすく
         styles.cell,
       )}
       target="_self"
     >
       <div className="flex flex-col gap-1">
-        <p className={cn("text-sm font-semibold leading-snug text-pretty line-clamp-2", styles.title)}>
+        <p
+          className={cn("text-sm font-semibold leading-snug text-pretty line-clamp-1", styles.title)}
+          title={course.title}
+        >
           {course.title}
         </p>
       </div>
 
       <p
-        className={cn("text-xs leading-relaxed truncate", styles.teacher)}
+        className={cn("text-xs leading-relaxed truncate", styles.teacher, "line-clamp-1")}
         title={course.teachers.join(", ")} // ホバーした瞬間にフルネームがツールチップで出るようにしておく
       >
         {course.teachers.join(", ")}
@@ -69,7 +72,7 @@ export function TimetableGrid({ timetableStore }: TimetableComponentProps) {
           {DAYS.map((day) => (
             <div
               key={day.key}
-              className="border-l-2 border-border/60 bg-muted/40 px-4 py-4 text-center flex flex-col items-center justify-center leading-tight"
+              className="border-l border-border/60 bg-muted/40 px-4 py-4 text-center flex flex-col items-center justify-center leading-tight"
             >
               <span className="text-base font-bold text-foreground">
                 {day.label}
@@ -87,7 +90,7 @@ export function TimetableGrid({ timetableStore }: TimetableComponentProps) {
             <React.Fragment key={period}>
 
               {/* 行の先頭：時限セル */}
-              <div className="border-t-2 border-border/50 bg-muted/20 px-3 py-4 text-center flex flex-col items-center justify-center leading-tight">
+              <div className="border-t border-border/50 bg-muted/20 px-3 py-4 text-center flex flex-col items-center justify-center leading-tight">
                 <span className="text-lg font-bold text-foreground/80">
                   {period}
                 </span>
@@ -111,7 +114,7 @@ export function TimetableGrid({ timetableStore }: TimetableComponentProps) {
                 return (
                   <div
                     key={day.key}
-                    className="border-t-2 border-l-2 border-border/50 p-2 min-h-24 content-start"
+                    className="border-t border-l border-border/50 p-2 min-h-24 content-start"
                   >
                     {filteredCourses.length > 0 && (
                       <div className="flex flex-col">
