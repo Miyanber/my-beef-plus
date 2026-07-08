@@ -4,29 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 1. Plasmoが生成する最外層のカスタムエレメント自体を画面幅いっぱいにする */
-:host(plasmo-csui) {
-  display: block !important;
-  width: 100vw !important;
-  max-width: 100vw !important;
-  min-width: 0 !important; /* 1000pxなどの最小幅制限を打ち消す */
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
-}
-
 /* 2. その中にあるShadow DOMのコンテナも追従させる */
 #plasmo-shadow-container {
   all: initial;
   box-sizing: border-box;
   display: block;
-  width: 100% !important;
-  max-width: 100% !important;
+  width: 100%;
+  font-size: 1.6rem !important;
 }
 
-#plasmo-shadow-container > div,
-#plasmo-shadow-container > div > div {
-  width: 100% !important;
+#plasmo-shadow-container > div {
+  display: block;
 }
 
 :root {
