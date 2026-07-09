@@ -35,15 +35,13 @@ export function AppSidebar() {
   return (
     <>
       {/* 1. スマホ用：ハンバーガーボタンとドロワー（md未満で表示） */}
-      <div className="flex h-16 items-center border-b px-4 md:hidden bg-sidebar text-sidebar-foreground">
+      <div className="fixed z-30 flex h-16 items-center border-b px-4 md:hidden bg-sidebar text-sidebar-foreground">
         <Sheet>
-          <SheetTrigger>
-            <div
-              aria-label="メニューを開く"
-              className="flex size-8 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent"
-            >
-              <Menu className="size-5" />
-            </div>
+          <SheetTrigger 
+            aria-label="メニューを開く"
+            className="flex size-8 items-center justify-center rounded-lg border border-sidebar-border bg-sidebar hover:bg-sidebar-accent"
+          >
+            <Menu className="size-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border">
             <div className="flex flex-col gap-8 px-5 py-7">
