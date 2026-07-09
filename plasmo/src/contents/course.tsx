@@ -8,7 +8,7 @@ import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
 import type { CourseDetail, Announcement, LectureMaterial, Attachment } from "@/lib/timetable-data"
 import { Bell, Edit3, FilePenLine, FileText, Mail, MessageSquare, MoreVertical } from "lucide-react"
-import { waitForSelector } from "~lib/utils"
+import { executeIfExpired, waitForSelector } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/course*"],
@@ -205,28 +205,18 @@ const PlasmoSidebarOverlay = () => {
   }
 
   useEffect(() => {
-    console.log("useEffect")
-
     const nowDate = new Date();
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
-    // 1. ストレージが空、または 2. 有効期限（1日）が切れている場合にパースを実行
-    const isInitial = !courseDetail;
-    const isExpired = courseDetail && (nowDate.getTime() - new Date(courseDetail.lastUpdated).getTime() > ONE_DAY);
-
-    // if (isInitial || isExpired) {
-    if (true) {
-      // 既に画面にフォームが存在する場合の処理
-      const initCourseDetail = async () => {
-        const form = await waitForSelector("#courseTopForm") as HTMLFormElement;
-        const parsedData = parseCourseDetailHTML(id, courseDetail, form); // 引数を修正
-        document.getElementById("contentsWrapper").remove();
-        setCourseDetail(parsedData);
-      }
-
-      initCourseDetail();
-    }
-
+    executeIfExpired(courseDetail, ONE_DAY, async () => {
+      const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
+      const parsedData = parseCourseDetailHTML(id, courseDetail, form);
+      document.getElementById("contentsWrapper").hidden = true;
+      setCourseDetail({
+        ...parsedData,
+        lastUpdated: nowDate.toISOString()
+      });
+    });
 
   }, [courseDetail]);
 
