@@ -118,7 +118,7 @@ const PlasmoSidebarOverlay = () => {
       });
     });
     
-  }, [timetableStore]);
+  }, []);
 
 
   return (
