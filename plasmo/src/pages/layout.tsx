@@ -13,7 +13,7 @@ export function DefaultLayout({ children }: LayoutProps) {
 			<div className="flex w-screen min-h-screen bg-background">
 				<AppSidebar />
 
-				<div className="flex overflow-x-auto lg:flex-1 flex-col">
+				<div className="flex overflow-x-auto flex-1 flex-col">
 					<TopHeader />
 					{children}
 					<footer className="border-t border-border bg-card/50 px-6 py-6 lg:px-10">

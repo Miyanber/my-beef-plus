@@ -209,7 +209,7 @@ const PlasmoSidebarOverlay = () => {
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
     executeIfExpired(courseDetail, ONE_DAY, async () => {
-      const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
+      const form = await waitForSelector("#courseTopForm") as HTMLFormElement;
       const parsedData = parseCourseDetailHTML(id, courseDetail, form);
       document.getElementById("contentsWrapper").hidden = true;
       setCourseDetail({
@@ -218,9 +218,7 @@ const PlasmoSidebarOverlay = () => {
       });
     });
 
-  }, [courseDetail]);
-
-  console.log(courseDetail)
+  }, []);
 
   return (
     <DefaultLayout>
