@@ -59,8 +59,10 @@ export const executeIfExpired = async <T extends { lastUpdated: string }>(
     nowDate.getTime() - new Date(cacheData.lastUpdated).getTime() > timeoutMs
   );
 
-  // TODO: 開発中・リロードボタン押したときはキャッシュ無効化できるようにする
-  if (isInitial || isExpired) {
+  // TODO: リロードボタン押したときはキャッシュ無効化できるようにする
+  const isDebug = process.env.PLASMO_PUBLIC_DEBUG === "True";
+
+  if (isInitial || isExpired || isDebug) {
     await callback();
   }
 };
