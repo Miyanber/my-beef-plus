@@ -10,7 +10,7 @@ import { TimetableGrid } from "@/components/timetable/timetable-grid"
 import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
 import type { DayKey, CourseColor, TimetableStore, TimetableCourse } from "@/lib/timetable-data"
-import { waitForSelector } from "~lib/utils"
+import { executeIfExpired, waitForSelector } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable*"],
@@ -107,24 +107,17 @@ const PlasmoSidebarOverlay = () => {
     const nowDate = new Date();
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
-    // 1. ストレージが空、または 2. 有効期限（1日）が切れている場合にパースを実行
-    const isInitial = !timetableStore;
-    const isExpired = timetableStore && (nowDate.getTime() - new Date(timetableStore.lastUpdated).getTime() > ONE_DAY);
-
-    if (isInitial || isExpired) {
-      const initTimetable = async () => {
-        const baseCourses = timetableStore?.courses || {};
-
-        const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
-        const parsedData = parseBEEFTimetable(baseCourses, form); // 引数を修正
-        document.getElementById("contentsWrapper").hidden = true;
-        setTimetableStore({
-          lastUpdated: nowDate.toISOString(),
-          courses: parsedData
-        });
-      }
-      initTimetable();
-    }
+    executeIfExpired(timetableStore, ONE_DAY, async () => {
+      const baseCourses = timetableStore?.courses || {};
+      const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
+      const parsedData = parseBEEFTimetable(baseCourses, form); // 引数を修正
+      document.getElementById("contentsWrapper").hidden = true;
+      setTimetableStore({
+        lastUpdated: nowDate.toISOString(),
+        courses: parsedData
+      });
+    });
+    
   }, [timetableStore]);
 
 
