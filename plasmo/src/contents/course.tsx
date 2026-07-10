@@ -48,25 +48,67 @@ const SectionWrapper: React.FC<SectionProps> = ({ title, bgColor, icon, children
 export async function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, selector: string): Promise<CourseDetail> {
   await waitForSelector(selector);
 
-  const qlEditorWrappers = document.querySelectorAll(".course-material-edit-comment");
-  console.log("start", qlEditorWrappers);
+  const qlEditorWrappers: Element[] = [];
+  qlEditorWrappers.push(...document.querySelectorAll(".course-material-edit-comment").values().toArray())
   await Promise.all(
-    qlEditorWrappers.values().map(
+    qlEditorWrappers.map(
       (element) => new Promise<void>(
         (resolve) => {
-          console.log(element)
           waitForSelector(".ql-editor:not(.ql-blank)", { root: element }).then(
             () => resolve()
           );
         })
     )
-  )
-  console.log("end")
+  );
 
   const selectorElement = await waitForSelector(selector);
+  console.log(document.getElementsByClassName("course-header")[0].outerHTML)
 
-  // 2. courseSummaryの抽出 (#bodyEditor の中のテキスト)
-  const courseSummary = selectorElement.querySelector("#bodyEditor")?.textContent?.trim() || undefined;
+  // 1. 年度
+  const rishunen = (document.querySelector('input[name="rishunen"]') as HTMLInputElement)?.value || "";
+
+  // 2. 時間割コード・科目名 (アンカータグ内のspan要素から取得)
+  const courseTitleSpans = document.querySelectorAll('.course-title-txt a.link-txt span');
+  const semesterText = courseTitleSpans[0]?.textContent.trim() || ""; // "2026 前期"
+  const courseCode = courseTitleSpans[1]?.textContent.trim() || "";    // "1X017"
+  const courseName = courseTitleSpans[2]?.textContent.trim() || "";    // "演習1"
+
+  // 3. 担当教員
+  const teachersElement = document.querySelector('.course-view-title-txt:nth-child(1) span:nth-child(2)');
+  const teachers = teachersElement?.textContent.trim() || "";
+
+  // 4. 開講学期 (パース処理)
+  const scheduleElement = document.querySelector('.subblock_form');
+  const scheduleRaw = scheduleElement?.textContent.trim() || ""; // "前期/金曜日/２時限"
+
+  let formattedSchedule = null;
+  if (scheduleRaw) {
+    const parts = scheduleRaw.split('/');
+    if (parts.length === 3) {
+      const semester = parts[0];                          // "前期"
+      const day = parts[1].replace('曜日', '');           // "金曜日" -> "金"
+      const period = parts[2].replace(/[^0-9１-９]/g, '') // 数字か全角数字のみ抽出
+        .replace(/[１-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)); // 全角を半角に変換 ("２" -> "2")
+
+      formattedSchedule = { semester, day, period: parseInt(period, 10) || period };
+    }
+  }
+
+  // 5. コースの概要説明
+  const summaryElement = document.querySelector('.contents-title-txt:nth-child(2)');
+  // "コースの概要説明/Course Summary" のラベル部分を削除して本文のみを抽出
+  const courseSummary = summaryElement?.textContent.replace(/^コースの概要説明\/Course Summary\s*/, '').trim() || "";
+
+  // --- 結果の出力 ---
+  console.log({
+    "年度": rishunen,
+    "開講時期(表示)": semesterText,
+    "時間割コード": courseCode,
+    "科目名": courseName,
+    "担当教員": teachers,
+    "開講学期(パース後)": formattedSchedule ? `(${formattedSchedule.semester}, ${formattedSchedule.day}, ${formattedSchedule.period})` : null,
+    "コースの概要説明": courseSummary
+  });
 
   // 3. classDetailsの抽出 (#onlineBodyEditor のHTMLと更新日時)
   let classDetails: CourseDetail["classDetails"] = undefined;
