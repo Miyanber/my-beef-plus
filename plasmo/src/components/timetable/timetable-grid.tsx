@@ -41,7 +41,7 @@ function CourseCard({ course }: { course: TimetableCourse }) {
 }
 
 interface TimetableComponentProps {
-  timetableStore: TimetableStore; // 親から受け取るデータの型を指定
+  timetableStore: TimetableStore | undefined; // 親から受け取るデータの型を指定
 }
 
 export function TimetableGrid({ timetableStore }: TimetableComponentProps) {

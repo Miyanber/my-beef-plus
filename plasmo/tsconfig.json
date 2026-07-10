@@ -9,6 +9,7 @@
     "./**/*.tsx"
   ],
   "compilerOptions": {
+    "strict": true,
     "paths": {
       "~*": [
         "./src/*"
@@ -17,6 +18,8 @@
         "./src/*"
       ]
     },
-    "baseUrl": "."
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "types": ["node", "plasmo"]
   }
 }

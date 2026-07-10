@@ -111,7 +111,8 @@ const PlasmoSidebarOverlay = () => {
       const baseCourses = timetableStore?.courses || {};
       const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
       const parsedData = parseBEEFTimetable(baseCourses, form); // 引数を修正
-      document.getElementById("contentsWrapper").hidden = true;
+      const contentsWrapper = await waitForSelector("#contentsWrapper") as HTMLElement;
+      contentsWrapper.hidden = true;
       setTimetableStore({
         lastUpdated: nowDate.toISOString(),
         courses: parsedData
