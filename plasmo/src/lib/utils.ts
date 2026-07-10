@@ -5,35 +5,49 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+interface WaitForSelectorOptions {
+  timeout?: number;
+  root?: Element | Document; // 🎯 検索基準となる親要素を指定できるようにする
+}
+
 /**
  * 指定したセレクターの要素がDOMに出現するまで待機する関数
  */
-export function waitForSelector(selector: string, timeout = 10000): Promise<Element> {
+export function waitForSelector(
+  selector: string,
+  options: WaitForSelectorOptions = {}
+): Promise<Element> {
+  const { timeout = 10000, root = document } = options;
+
   return new Promise((resolve, reject) => {
-    // 既に存在していれば即レス
-    const existingElement = document.querySelector(selector)
-    if (existingElement) return resolve(existingElement)
+    // 1. 指定された root の中から既に存在していれば即レス
+    const existingElement = root.querySelector(selector);
+    if (existingElement) return resolve(existingElement);
 
     const observer = new MutationObserver((_, obs) => {
-      const element = document.querySelector(selector)
+      // 2. 変更があった際も root の中から探す
+      const element = root.querySelector(selector);
       if (element) {
-        obs.disconnect()
-        clearTimeout(timer)
-        resolve(element)
+        obs.disconnect();
+        clearTimeout(timer);
+        resolve(element);
       }
-    })
+    });
 
-    observer.observe(document.documentElement, {
+    // 3. 監視対象も root に絞る（Documentの場合は documentElement、Elementの場合はそれ自体）
+    const targetNode = root instanceof Document ? root.documentElement : root;
+
+    observer.observe(targetNode, {
       childList: true,
       subtree: true,
-    })
+    });
 
-    // タイムアウト処理（一応入れておくと安全）
+    // タイムアウト処理
     const timer = setTimeout(() => {
-      observer.disconnect()
-      reject(new Error(`Timeout: Element "${selector}" not found after ${timeout}ms`))
-    }, timeout)
-  })
+      observer.disconnect();
+      reject(new Error(`Timeout: Element "${selector}" not found under the specified root after ${timeout}ms`));
+    }, timeout);
+  });
 }
 
 /**
