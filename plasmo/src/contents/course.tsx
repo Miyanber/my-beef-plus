@@ -1,6 +1,7 @@
 
 import type { PlasmoCSConfig } from "plasmo"
 import { useStorage } from "@plasmohq/storage/hook"
+import { Storage } from "@plasmohq/storage"
 
 // コンポーネントのパスは環境に合わせて適宜微調整してください
 import { useEffect } from "react"
@@ -44,17 +45,34 @@ const SectionWrapper: React.FC<SectionProps> = ({ title, bgColor, icon, children
  * HTML文字列からCourseDetailオブジェクトを構築する関数
  * (ブラウザ環境のDOMParser、またはJSDOM環境を想定しています)
  */
-export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, formElement: HTMLFormElement | Document = document): CourseDetail {
-  const document = formElement;
+export async function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, selector: string): Promise<CourseDetail> {
+  await waitForSelector(selector);
+
+  const qlEditorWrappers = document.querySelectorAll(".course-material-edit-comment");
+  console.log("start", qlEditorWrappers);
+  await Promise.all(
+    qlEditorWrappers.values().map(
+      (element) => new Promise<void>(
+        (resolve) => {
+          console.log(element)
+          waitForSelector(".ql-editor:not(.ql-blank)", { root: element }).then(
+            () => resolve()
+          );
+        })
+    )
+  )
+  console.log("end")
+
+  const selectorElement = await waitForSelector(selector);
 
   // 2. courseSummaryの抽出 (#bodyEditor の中のテキスト)
-  const courseSummary = document.querySelector("#bodyEditor")?.textContent?.trim() || undefined;
+  const courseSummary = selectorElement.querySelector("#bodyEditor")?.textContent?.trim() || undefined;
 
   // 3. classDetailsの抽出 (#onlineBodyEditor のHTMLと更新日時)
   let classDetails: CourseDetail["classDetails"] = undefined;
-  const onlineBody = document.querySelector("#onlineBodyEditor .ql-editor");
+  const onlineBody = selectorElement.querySelector("#onlineBodyEditor .ql-editor");
   if (onlineBody) {
-    const onlineUpdateText = document.querySelector(".online-update-txt")?.textContent || "";
+    const onlineUpdateText = selectorElement.querySelector(".online-update-txt")?.textContent || "";
     const updatedAt = onlineUpdateText.replace("更新日時:", "").trim();
     classDetails = {
       rawHTML: onlineBody.innerHTML.trim(),
@@ -64,7 +82,7 @@ export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, fo
 
   // 4. announcements (お知らせ) のパース
   const announcements: Announcement[] = [];
-  const infoBlocks = document.querySelectorAll(".sortInformationParent .sortInformationBlock");
+  const infoBlocks = selectorElement.querySelectorAll(".sortInformationParent .sortInformationBlock");
   infoBlocks.forEach((block) => {
     const titleElem = block.querySelector(".infoTitle");
     const title = titleElem?.textContent?.trim() || "";
@@ -91,16 +109,16 @@ export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, fo
 
   // 5. lectureMaterials (教材) のパース
   const lectureMaterials: LectureMaterial[] = [];
-  const materialList = document.querySelector("#materialList");
+  const materialList = selectorElement.querySelector("#materialList");
 
   if (materialList) {
     // 各回の塊（.contents-detail）を基準にループします
     const details = materialList.querySelectorAll(".contents-detail");
 
-    details.forEach((detail) => {
+    for (const detail of details) {
       // 該当セクションのタイトル（例：「第13回授業資料」）
-      const titleLabel = detail.querySelector(".material-sub-color label");
-      if (!titleLabel) return;
+      const titleLabel = detail.querySelector(".block-title label");
+      if (!titleLabel) continue;
       const title = titleLabel.textContent?.trim() || "";
 
       let start = "";
@@ -111,7 +129,7 @@ export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, fo
       // タイトル要素以降の次の要素から兄弟要素を順に走査し、
       // 次の回の塊（.material-sub-color を持つ要素）が出現するまで情報を収集する
       let currentElement = detail.nextElementSibling;
-      while (currentElement && !currentElement.querySelector(".material-sub-color")) {
+      while (currentElement && !currentElement.querySelector(".block-title")) {
 
         // 公開期間の抽出
         const headerTxt = currentElement.querySelector(".contents-header-txt .bold-txt")?.textContent?.trim();
@@ -125,8 +143,8 @@ export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, fo
         }
 
         // 説明・コメントの抽出
-        const editor = currentElement.querySelector(".ql-editor");
-        if (editor) {
+        if (currentElement.classList.contains("course-material-edit-comment")) {
+          const editor = await waitForSelector(".ql-editor:not(.ql-blank)", { root: currentElement }) as HTMLDivElement;
           description = editor.innerHTML.trim();
         }
 
@@ -163,7 +181,7 @@ export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, fo
         description,
         attachments,
       });
-    });
+    };
   }
 
   const lastUpdated = new Date().toISOString();
@@ -187,7 +205,12 @@ export function parseCourseDetailHTML(id: string, courseDetail: CourseDetail, fo
 const PlasmoSidebarOverlay = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const id = urlParams.get("id") || "default";
-  const [courseDetail, setCourseDetail] = useStorage<CourseDetail>(`course_${id}`, {
+  const [courseDetail, setCourseDetail] = useStorage<CourseDetail>({
+    key: `course_${id}`,
+    instance: new Storage({
+      area: "local"
+    })
+  }, {
     id: "default",
     lastUpdated: new Date(0).toISOString(),
     courseSummary: "",
@@ -209,8 +232,7 @@ const PlasmoSidebarOverlay = () => {
     const ONE_DAY = 24 * 60 * 60 * 1000;
 
     executeIfExpired(courseDetail, ONE_DAY, async () => {
-      const form = await waitForSelector("#courseTopForm") as HTMLFormElement;
-      const parsedData = parseCourseDetailHTML(id, courseDetail, form);
+      const parsedData = await parseCourseDetailHTML(id, courseDetail, "#courseTopForm");
       const contentsWrapper = await waitForSelector("#contentsWrapper") as HTMLElement;
       contentsWrapper.hidden = true;
       setCourseDetail({
