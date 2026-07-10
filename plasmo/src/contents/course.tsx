@@ -211,7 +211,8 @@ const PlasmoSidebarOverlay = () => {
     executeIfExpired(courseDetail, ONE_DAY, async () => {
       const form = await waitForSelector("#courseTopForm") as HTMLFormElement;
       const parsedData = parseCourseDetailHTML(id, courseDetail, form);
-      document.getElementById("contentsWrapper").hidden = true;
+      const contentsWrapper = await waitForSelector("#contentsWrapper") as HTMLElement;
+      contentsWrapper.hidden = true;
       setCourseDetail({
         ...parsedData,
         lastUpdated: nowDate.toISOString()
