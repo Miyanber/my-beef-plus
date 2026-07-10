@@ -24,7 +24,7 @@ const NAV_ITEMS = [
 
 export function AppSidebar() {
   // 初期値を undefined にして、ストレージ読み込み中であることを検知する
-  const [isOpen, setIsOpen] = useStorage<boolean>("isOpen", undefined) 
+  const [isOpen, setIsOpen] = useStorage<boolean | undefined>("isOpen", undefined) 
 
   // 1. ストレージから値が返ってくるまでの「一瞬」のデフォルト値（開いた状態）
   const isSidebarOpen = isOpen ?? true 
