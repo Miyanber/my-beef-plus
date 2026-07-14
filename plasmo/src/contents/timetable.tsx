@@ -1,16 +1,17 @@
 
-import type { PlasmoCSConfig, PlasmoGetInlineAnchor } from "plasmo"
+import type { PlasmoCSConfig } from "plasmo"
 import { useStorage } from "@plasmohq/storage/hook"
 
 // コンポーネントのパスは環境に合わせて適宜微調整してください
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { CalendarRange } from "lucide-react"
 import { ControlBar } from "@/components/timetable/control-bar"
 import { TimetableGrid } from "@/components/timetable/timetable-grid"
 import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
-import type { DayKey, CourseColor, TimetableStore, TimetableCourse } from "@/lib/timetable-data"
+import type { TimetableStore } from "@/lib/timetable-data"
 import { executeIfExpired, waitForSelector } from "~lib/utils"
+import { parseBEEFTimetable } from "~lib/parser"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable*"],
@@ -19,85 +20,6 @@ export const config: PlasmoCSConfig = {
 
 export const getStyle = getDefaultStyle
 
-
-export function parseBEEFTimetable(timetableCourses: Record<string, TimetableCourse>, formElement: HTMLFormElement | Document = document): Record<string, TimetableCourse> {
-  const dayKeys: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
-  const rows = formElement.querySelectorAll(".div-table-data-row");
-
-  rows.forEach((row) => {
-    const periodText = row.querySelector(".div-table-colomn-period")?.textContent?.trim() || "";
-    const periodMatch = periodText.match(/([１２３４５６123456])時限/);
-    if (!periodMatch) return;
-
-    const rawPeriod = periodMatch[1];
-    const period = parseInt(
-      rawPeriod.replace(/[１-６]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0)),
-      10
-    );
-
-    dayKeys.forEach((dayKey, index) => {
-      const colClass = `${index + 1}-yobicol`;
-
-      const cell = row.querySelector(`.div-table-cell[class*="${colClass}"]`);
-      if (!cell) return;
-
-      const lectureBlocks = cell.querySelectorAll(".clearfix");
-
-      lectureBlocks.forEach((block) => {
-        const titleEl = block.querySelector(".timetable-course-top-btn");
-        if (!titleEl) return;
-
-        const id = titleEl.id;
-        if (!timetableCourses[id]) {
-          const fullTitleText = titleEl.textContent?.trim() || "";
-
-          const spaceIndex = fullTitleText.indexOf(" ");
-          let code = "";
-          let title = fullTitleText;
-          if (spaceIndex !== -1) {
-            code = fullTitleText.substring(0, spaceIndex).trim();
-            title = fullTitleText.substring(spaceIndex + 1).trim();
-          }
-
-          const teacherSpans = block.querySelectorAll(".div-table-cell-detail span");
-          const teachers: string[] = [];
-          const seenTeachers = new Set<string>();
-
-          teacherSpans.forEach((span) => {
-            const name = span.textContent?.replace(/[\s,、]+/g, " ").trim() || "";
-            if (name && name !== "," && !seenTeachers.has(name)) {
-              teachers.push(name);
-              seenTeachers.add(name);
-            }
-          });
-
-          const course: TimetableCourse = {
-            id,
-            code,
-            title,
-            teachers,
-            color: "blue" as CourseColor,
-            dates: [
-              {
-                day: dayKey,
-                period: period
-              }
-            ]
-          };
-
-          timetableCourses[id] = course;
-        } else {
-          timetableCourses[id].dates.push({
-            day: dayKey,
-            period: period
-          })
-        }
-      });
-    });
-  });
-
-  return timetableCourses;
-}
 
 // メインのコンポーネント
 const PlasmoSidebarOverlay = () => {
