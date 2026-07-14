@@ -115,7 +115,10 @@ export interface TimetableStore {
 export interface CourseDetail {
   id: string; // TimetableCourse.id と紐づく
   lastUpdated: string;
-  courseSummary?: string; 
+  courseSummary?: {
+    text: string;
+    rawHTML: string;
+  }; 
   classDetails?: {
     rawHTML: string; // 危険性を意識しやすい命名に
     updatedAt: string; // ISO 8601形式などの文字列、または number (ミリ秒)
