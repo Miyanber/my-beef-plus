@@ -3,6 +3,8 @@ import type { PlasmoCSConfig } from "plasmo"
 import { useEffect } from "react"
 import { waitForSelector } from "~lib/utils"
 
+import "~style.css"
+
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/*"],
   run_at: "document_start"
@@ -43,7 +45,9 @@ const PlasmoOverlay = () => {
   useEffect(() => {
     (async () => {
       await waitForSelector("body");
-      document.body.classList.add("font-sans", "antialiased");
+      document.body.classList.add("antialiased", "my-beef-plus");
+
+      return
       document.body.style.setProperty("overflow-x", "hidden", "important");
 
 
