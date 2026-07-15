@@ -44,6 +44,7 @@ const SectionWrapper: React.FC<SectionProps> = ({ title, bgColor, icon, children
 
 // メインのコンポーネント
 const PlasmoSidebarOverlay = () => {
+  return 
   const urlParams = new URLSearchParams(window.location.search);
   const id = urlParams.get("id") || "default";
   const [courseDetail, setCourseDetail] = useStorage<CourseDetail>({

@@ -126,7 +126,7 @@ function LogoLockup({ isOpen }: { isOpen: boolean }) {
   )
 }
 
-function Navigation({ isOpen }: { isOpen: boolean }) {
+export function Navigation({ isOpen }: { isOpen: boolean }) {
   return (
     <nav className="flex flex-col gap-1.5" aria-label="メインナビゲーション">
       {NAV_ITEMS.map(({ label, icon: Icon, path }) => {

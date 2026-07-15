@@ -23,6 +23,7 @@ export const getStyle = getDefaultStyle
 
 // メインのコンポーネント
 const PlasmoSidebarOverlay = () => {
+  return 
   const [timetableStore, setTimetableStore] = useStorage<TimetableStore>("timetableStore");
 
   useEffect(() => {
