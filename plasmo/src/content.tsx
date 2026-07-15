@@ -6,7 +6,10 @@ import { waitForSelector } from "~lib/utils"
 import "~style.css"
 
 export const config: PlasmoCSConfig = {
-  matches: ["https://beefplus.center.kobe-u.ac.jp/lms/*"],
+  matches: [
+    "https://beefplus.center.kobe-u.ac.jp/lms/*",
+    "https://beefplus.center.kobe-u.ac.jp/portal/*"
+  ],
   run_at: "document_start"
 }
 
