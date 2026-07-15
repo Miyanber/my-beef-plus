@@ -141,7 +141,7 @@
 }
 
 body.my-beef-plus {
-  .timetable-course-top-btn {
+  /* .timetable-course-top-btn {
     min-height: 3rem;
   }
 
@@ -157,20 +157,20 @@ body.my-beef-plus {
   .plasmo-csui-container {
     display: block !important;
     position: relative !important;
-  }
+  } */
 
   /* SideMenu */
 
-  .sidemenu {
+  /* .sidemenu {
     background-color: var(--sidebar);
     overflow-y: auto;
     padding: 1rem;
     box-sizing: border-box;
-  }
+  } */
 
   /* Timetable */
 
-  .timetable-color {
+  /* .timetable-color {
     all: initial;
   }
 
@@ -181,7 +181,7 @@ body.my-beef-plus {
     width: 1.5rem;
     height: 1.5rem;
     position: relative;
-  }
+  } */
 
   .div-table-cell-detail>div {
     -webkit-line-clamp: 1 !important;
@@ -189,5 +189,534 @@ body.my-beef-plus {
     -webkit-box-orient: vertical !important;
     line-clamp: 1;
     overflow: hidden !important;
+  }
+
+}
+
+/* 1. CSS Variables (Custom Properties) */
+:root {
+  /* Color Palette: Light Theme */
+  --bg-main: #f7f8f9;
+  --bg-surface: #ffffff;
+  --bg-header: #ffffff;
+  --text-main: #111827;
+  --text-muted: #6b7280;
+  --border-color: #e5e7eb;
+
+  --table-bg: transparent;
+  --table-period-text: #9ca3af;
+
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --card-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+
+  --course-title-bg: #f9fafb;
+  --course-title-text: #111827;
+  --course-detail-text: #4b5563;
+
+  --btn-primary-bg: #111827;
+  --btn-primary-text: #ffffff;
+  --btn-primary-hover: #374151;
+
+  --accent-color: #4f46e5;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --radius-sm: 6px;
+
+  --transition-speed: 0.25s;
+
+  --sidebar-bg: #fcfcfc;
+  --sidebar-border: #e5e7eb;
+  --sidebar-header-bg: transparent;
+  --sidebar-text: #4b5563;
+  --sidebar-text-hover: #111827;
+  --sidebar-item-bg-hover: #f3f4f6;
+  --sidebar-width: 280px;
+  /* Slightly narrower and modern */
+  --transition-speed: 0.25s;
+}
+
+/* Dark Theme Support (Toggled by adding class 'dark' to body tag) */
+body.dark {
+  --bg-main: #121212;
+  --bg-surface: #1e1e1e;
+  --bg-header: #1a1a1a;
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  --border-color: #2d3748;
+
+  --card-bg: #1e1e1e;
+  --card-border: #2d3748;
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --card-shadow-hover: 0 12px 20px -3px rgba(0, 0, 0, 0.6);
+
+  --course-title-bg: #2d3748;
+  --course-title-text: #f9fafb;
+  --course-detail-text: #d1d5db;
+
+  --btn-primary-bg: #f9fafb;
+  --btn-primary-text: #111827;
+  --btn-primary-hover: #e5e7eb;
+
+  --accent-color: #818cf8;
+
+  --sidebar-bg: #171717;
+  --sidebar-border: #2d3748;
+  --sidebar-text: #9ca3af;
+  --sidebar-text-hover: #f9fafb;
+  --sidebar-item-bg-hover: #2d3748;
+}
+
+body.my-beef-plus {
+  /* ==========================================================================
+   Modern Timetable UI (Notion / Linear Style)
+   ========================================================================== */
+
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+
+
+  /* 2. Global Resets & Base Styles */
+  .page-main,
+  #contentsWrapper,
+  .page-main-study {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+  }
+
+  /* Header Adjustments */
+  .page-head,
+  .global-header {
+    background-color: var(--bg-header);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: none;
+  }
+
+  .login-view,
+  .login-view-study {
+    background-color: transparent;
+    color: var(--text-main);
+  }
+
+  .page-head-navi-colomn {
+    color: var(--text-muted);
+  }
+
+  /* 3. Timetable Container & Title */
+  .timetable-color {
+    background-color: transparent;
+    padding: 0;
+    margin: 32px 0 24px 34px;
+    display: flex;
+    align-items: center;
+  }
+
+  .timetable-icon {
+    display: none;
+    /* Hide outdated icon */
+  }
+
+  .timetable-title-txt {
+    color: var(--text-main);
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Filters (Term, Year select area) */
+  .contents-question-template-area {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 16px 20px;
+    margin: 0 34px 32px 34px;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    align-items: center;
+  }
+
+  .timetable-nendo {
+    color: var(--text-main);
+    font-weight: 500;
+  }
+
+  .input-select-box-area {
+    background: transparent;
+    border: none;
+  }
+
+  .input-select-box-area::after {
+    display: none;
+    /* Remove old custom arrow line */
+  }
+
+  .input-select-box-area::before {
+    border-top-color: var(--text-muted);
+    /* Update arrow color */
+  }
+
+  .input-select-box {
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: var(--radius-sm);
+    padding: 8px 32px 8px 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .input-select-box:focus {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+  }
+
+  /* Today Button */
+  .today-btn {
+    background-color: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+    border: none;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+  }
+
+  .today-btn:not(:disabled):hover {
+    background-color: var(--btn-primary-hover);
+    transform: translateY(-1px);
+  }
+
+  /* 4. Table Structure (Gaps & Borders) */
+  .div-table {
+    border-collapse: separate;
+    border-spacing: 16px;
+    /* Creates gap between cards */
+    background-color: transparent;
+    border: none;
+    width: calc(100% - 68px);
+    margin: -16px 34px 0 34px;
+    /* Offset border-spacing */
+  }
+
+  /* Remove old cell borders */
+  .div-table-cell,
+  .div-table-colomn-period,
+  .div-table-head,
+  .div-table-data-row {
+    border: none;
+    background-color: transparent;
+  }
+
+  /* Table Headers (Mon, Tue...) */
+  .div-table-head {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Remove colored headers */
+  .yobi-color1,
+  .yobi-color2,
+  .yobi-color3,
+  .yobi-color4,
+  .yobi-color5,
+  .yobi-color6 {
+    background-color: transparent;
+    color: var(--text-muted);
+  }
+
+  /* Period Column (1st, 2nd...) */
+  .div-table-colomn-period {
+    color: var(--table-period-text);
+    font-weight: 600;
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+
+  /* 5. Course Cards */
+  .div-table-cell {
+    vertical-align: top;
+    padding: 0;
+  }
+
+  /* The Floating Card Wrapper */
+  .div-table-cell>.clearfix {
+    background-color: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, border-color var(--transition-speed) ease;
+    cursor: pointer;
+  }
+
+  .div-table-cell>.clearfix:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--accent-color);
+  }
+
+  /* Course Title Area inside Card */
+  .timetable-course-top-btn,
+  .timetable-course-top-btn-study,
+  .timetable-course-top-btn-mikaiko {
+    background-color: var(--course-title-bg);
+    color: var(--course-title-text);
+    border: none;
+    border-bottom: 1px solid var(--card-border);
+    box-shadow: none;
+    padding: 14px 16px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    text-align: left;
+    transition: background-color var(--transition-speed) ease;
+  }
+
+  .div-table-cell>.clearfix:hover .timetable-course-top-btn {
+    background-color: var(--bg-surface);
+  }
+
+  /* Course Details inside Card */
+  .div-table-cell-detail {
+    background-color: transparent;
+    border: none;
+    padding: 12px 16px;
+    color: var(--course-detail-text);
+    font-size: 0.8rem;
+    line-height: 1.5;
+    flex-grow: 1;
+  }
+
+  /* Subtext format */
+  .div-table-cell-detail span {
+    display: inline-block;
+    margin-right: 4px;
+  }
+
+  /* Remove 3D active state push down from old design */
+  .timetable-course-top-btn:active,
+  .timetable-course-top-btn-study:active {
+    transform: none;
+  }
+
+  /* 6. Refined Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--bg-main);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* Sidemenu */
+
+  /* 2. Sidebar Container */
+  .sidemenu {
+    background-color: var(--sidebar-bg);
+    border-right: 1px solid var(--sidebar-border);
+    box-shadow: none;
+    /* Remove old heavy shadow */
+    width: var(--sidebar-width);
+    z-index: 20;
+    transition: transform var(--transition-speed) ease, background-color var(--transition-speed) ease, border-color var(--transition-speed) ease;
+  }
+
+  .sidemenu-close {
+    transform: translateX(calc(var(--sidebar-width) * -1));
+  }
+
+  /* Adjust page main wrapper to match the new sidebar width */
+  .page-main {
+    left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+    transition: left var(--transition-speed) ease;
+  }
+
+  .page-main.sidemenu-hide {
+    left: 0;
+  }
+
+  @media (max-width: 480px) {
+    .sidemenu {
+      width: 260px;
+    }
+
+    .page-main {
+      left: 0;
+      width: 100%;
+    }
+  }
+
+  /* 3. Sidebar Header */
+  .sidemenu-head {
+    background-color: var(--sidebar-header-bg);
+    border-bottom: 1px solid var(--sidebar-border);
+    height: auto;
+    /* Remove fixed height */
+    padding: 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidemenu-logo {
+    padding-top: 0;
+  }
+
+  .sidemenu-logo img {
+    max-width: 140px;
+    height: auto;
+    transition: filter var(--transition-speed) ease;
+  }
+
+  /* Mobile close button */
+  .sidemenu-close-icon {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    right: 16px;
+  }
+
+  /* Clean up unnecessary elements */
+  #sidemenu br {
+    display: none;
+    /* Remove hardcoded line breaks */
+  }
+
+  #sidemenu>span {
+    display: block;
+  }
+
+  /* 4. Navigation Links */
+  /* Reset old background colors and borders */
+  .sidemenu-link,
+  .sidemenu-lms-color,
+  .sidemenu-course-search-color,
+  .sidemenu-lms-color-study,
+  .sidemenu-course-search-color-study {
+    background-color: transparent;
+    border-bottom: none;
+  }
+
+  .sidemenu-link {
+    margin: 4px 12px;
+    padding: 12px 16px 12px 48px;
+    border-radius: 8px;
+    width: auto;
+    display: block;
+    position: relative;
+    transition: background-color var(--transition-speed) ease;
+  }
+
+  /* Hover Effect for Links */
+  .sidemenu-link:hover {
+    background-color: var(--sidebar-item-bg-hover);
+  }
+
+  /* Link Text */
+  .sidemenu-link-txt {
+    color: var(--sidebar-text);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: color var(--transition-speed) ease;
+  }
+
+  .sidemenu-link:hover .sidemenu-link-txt {
+    color: var(--sidebar-text-hover);
+  }
+
+  /* 5. Icons Modernization */
+  .sidemenu-icon {
+    background-position: 14px center;
+    background-size: 22px auto;
+    /* Scale down old large icons */
+    /* Grayscale filter by default for a clean, unified look */
+    filter: grayscale(100%) opacity(0.6);
+    transition: filter var(--transition-speed) ease;
+  }
+
+  /* Reveal original colors on hover */
+  .sidemenu-link:hover .sidemenu-icon {
+    filter: grayscale(0%) opacity(1);
+  }
+
+  /* 6. Sub Menu / Pulldown (If applicable) */
+  .sidemenu-pull {
+    background-color: transparent;
+    color: var(--sidebar-text);
+    border-bottom: none;
+    margin: 4px 12px;
+    padding: 12px 16px 12px 48px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+
+  .sidemenu-pull:hover {
+    background-color: var(--sidebar-item-bg-hover);
+    color: var(--sidebar-text-hover);
+  }
+
+  .sidemenu-list-colomn {
+    background-color: transparent;
+    border-bottom: none;
+    margin: 2px 12px 2px 32px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    height: auto;
+  }
+
+  .sidemenu-list-colomn:hover {
+    background-color: var(--sidebar-item-bg-hover);
+  }
+
+  .sidemenu-list-txt {
+    color: var(--sidebar-text);
+    font-size: 0.9rem;
+  }
+
+  /* 7. Dark Mode Specific Overrides */
+  body.dark .sidemenu-logo img,
+  body.dark .sidemenu-close-icon img {
+    /* Invert black logo to white in dark mode */
+    filter: invert(0.9) hue-rotate(180deg) brightness(1.5);
+  }
+
+  body.dark .sidemenu-icon {
+    /* Make icons white/gray in dark mode */
+    filter: invert(0.8) opacity(0.7);
+  }
+
+  body.dark .sidemenu-link:hover .sidemenu-icon {
+    /* Fully visible white icons on hover in dark mode */
+    filter: invert(1) opacity(1);
   }
 }
