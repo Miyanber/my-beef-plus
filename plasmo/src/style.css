@@ -127,11 +127,89 @@
 @layer base {
   * {
     border-color: var(--border);
-    /* @apply border-border を通常のCSSに */
   }
 
   body {
     background-color: var(--background);
     color: var(--foreground);
   }
+}
+
+/* ==========================================================================
+   Rich Text (Quill output in Shadow DOM)
+   ========================================================================== */
+.rich-text {
+  line-height: 1.7;
+  color: inherit;
+  word-break: break-word;
+}
+
+.rich-text p {
+  margin-bottom: 0.5rem;
+}
+
+.rich-text p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rich-text a:hover {
+  opacity: 0.8;
+}
+
+.rich-text ul,
+.rich-text ol {
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-text ul {
+  list-style-type: disc;
+}
+
+.rich-text ol {
+  list-style-type: decimal;
+}
+
+.rich-text li {
+  margin-bottom: 0.25rem;
+}
+
+.rich-text strong {
+  font-weight: 700;
+}
+
+.rich-text blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 0.75rem;
+  margin: 0.5rem 0;
+  color: var(--muted-foreground);
+}
+
+.rich-text pre,
+.rich-text code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  background-color: var(--muted);
+  border-radius: 4px;
+  padding: 0.15rem 0.35rem;
+}
+
+.rich-text pre {
+  padding: 0.75rem;
+  overflow-x: auto;
+  margin: 0.5rem 0;
+}
+
+.rich-text img,
+.rich-text video {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  margin: 0.5rem 0;
 }

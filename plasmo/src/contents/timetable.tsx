@@ -1,17 +1,14 @@
-
 import type { PlasmoCSConfig } from "plasmo"
-import { useStorage } from "@plasmohq/storage/hook"
-
-// コンポーネントのパスは環境に合わせて適宜微調整してください
-import { useEffect } from "react"
 import { CalendarRange } from "lucide-react"
+import { useState } from "react"
 import { ControlBar } from "@/components/timetable/control-bar"
 import { TimetableGrid } from "@/components/timetable/timetable-grid"
+import { PageTitle } from "@/components/page-title"
 import { getDefaultStyle } from "~lib/plasmo-style"
 import { DefaultLayout } from "~pages/layout"
 import type { TimetableStore } from "@/lib/timetable-data"
-import { executeIfExpired, waitForSelector } from "~lib/utils"
-import { parseBEEFTimetable } from "~lib/parser"
+import { scrapeTimetable } from "~lib/scrapers"
+import { usePageData } from "~lib/use-page-data"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable*"],
@@ -20,53 +17,40 @@ export const config: PlasmoCSConfig = {
 
 export const getStyle = getDefaultStyle
 
+/**
+ * キャッシュが今開いているページ (年度・期間) のものか。
+ * 年度などを切り替えた直後に、別の年度のキャッシュが一瞬表示されるのを防ぐ。
+ */
+function isCacheForCurrentUrl(cached: TimetableStore): boolean {
+  const params = new URLSearchParams(window.location.search)
+  const year = params.get("risyunen")
+  const term = params.get("kikanCd")
+  return (!year || year === cached.year) && (term === null || term === cached.termCode)
+}
 
 // メインのコンポーネント
-const PlasmoSidebarOverlay = () => {
-  const [timetableStore, setTimetableStore] = useStorage<TimetableStore>("timetableStore");
+const TimetablePage = () => {
+  const { data } = usePageData<TimetableStore>({
+    key: "timetableStore",
+    scrape: scrapeTimetable,
+    accept: isCacheForCurrentUrl
+  })
+  const [query, setQuery] = useState("")
 
-  useEffect(() => {
-    const nowDate = new Date();
-    const ONE_DAY = 24 * 60 * 60 * 1000;
-
-    executeIfExpired(timetableStore, ONE_DAY, async () => {
-      const baseCourses = timetableStore?.courses || {};
-      const form = await waitForSelector("#selectTimetable") as HTMLFormElement;
-      const parsedData = parseBEEFTimetable(baseCourses, form); // 引数を修正
-      const contentsWrapper = await waitForSelector("#contentsWrapper") as HTMLElement;
-      contentsWrapper.hidden = true;
-      setTimetableStore({
-        lastUpdated: nowDate.toISOString(),
-        courses: parsedData
-      });
-    });
-    
-  }, []);
-
+  // データが揃うまでは BEEF+ 本来の画面をそのまま表示しておく
+  if (!data) return null
 
   return (
     <DefaultLayout>
-      <main className="flex-1 px-6 py-8 lg:px-10">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8">
-          {/* Page title */}
-          <div className="flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <CalendarRange className="size-6" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                時間割
-              </h1>
-              <p className="text-sm text-muted-foreground">Class Timetable</p>
-            </div>
-          </div>
-
-          <TimetableGrid timetableStore={timetableStore} />
-          <ControlBar />
+      <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 sm:gap-8">
+          <PageTitle icon={<CalendarRange />} title="時間割" subtitle="Class Timetable" />
+          <ControlBar store={data} query={query} onQueryChange={setQuery} />
+          <TimetableGrid timetableStore={data} query={query} />
         </div>
       </main>
     </DefaultLayout>
   )
 }
 
-export default PlasmoSidebarOverlay
+export default TimetablePage
