@@ -27,3 +27,4 @@ export const config: PlasmoCSConfig = {
     // タイムアウト時は無視
   }
 })()
+
