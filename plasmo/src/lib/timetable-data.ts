@@ -58,6 +58,14 @@ export interface Announcement {
   postingPeriod: DateRange;
 }
 
+export interface AnnouncementDetail {
+  id: string;
+  title: string;
+  sender: string;
+  period: string;
+  bodyHtml: string;
+}
+
 // 資料ファイル / リンク / 動画
 export interface Attachment {
   /** HTML上の要素のID (例: "material264629") */
