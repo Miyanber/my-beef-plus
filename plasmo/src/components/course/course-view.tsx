@@ -153,6 +153,8 @@ function Actions({ actions }: { actions: ActionLink[] }) {
 
 interface AnnouncementDetailState {
   title: string
+  sender?: string
+  period?: string
   html: string | null
   loading: boolean
 }
@@ -166,37 +168,58 @@ function AnnouncementDialog({ detail, onClose }: { detail: AnnouncementDetailSta
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-start gap-3 border-b border-border px-5 py-4">
-          <h3 className="flex-1 text-base font-bold leading-snug text-foreground">{detail.title}</h3>
-          <button
-            type="button"
-            aria-label="閉じる"
-            onClick={onClose}
-            className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <X className="size-4" />
-          </button>
-        </header>
-        <div className="overflow-y-auto px-5 py-4">
-          {detail.loading && (
-            <p className="flex items-center gap-2 text-sm text-muted-foreground">
-              <LoaderCircle className="size-4 animate-spin" /> 読み込み中…
-            </p>
+        <header className="flex flex-col gap-2 border-b border-border px-6 py-4">
+          <div className="flex items-start justify-between gap-4">
+            <h3 className="text-lg font-bold leading-snug text-foreground">{detail.title}</h3>
+            <button
+              type="button"
+              aria-label="閉じる"
+              onClick={onClose}
+              className="flex size-7 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+          {(detail.sender || detail.period) && (
+            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {detail.sender && (
+                <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 font-medium text-foreground">
+                  <Users className="size-3" />
+                  {detail.sender}
+                </span>
+              )}
+              {detail.period && <span>{detail.period}</span>}
+            </div>
           )}
-          {!detail.loading && detail.html && <div className="rich-text" dangerouslySetInnerHTML={{ __html: detail.html }} />}
+        </header>
+
+        <div className="overflow-y-auto px-6 py-5">
+          {detail.loading && (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
+              <LoaderCircle className="size-6 animate-spin text-primary" />
+              <p className="text-sm">お知らせを読み込み中…</p>
+            </div>
+          )}
+          {!detail.loading && detail.html && (
+            <div className="rich-text text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: detail.html }} />
+          )}
           {!detail.loading && !detail.html && (
-            <p className="text-sm text-muted-foreground">
-              お知らせの本文を取得できませんでした。フッターの「標準画面」から BEEF+ の元の画面で確認してください。
-            </p>
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <CircleAlert className="size-8 text-amber-500 mb-2" />
+              <p className="text-sm font-medium text-foreground">お知らせの本文を取得できませんでした</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                BEEF+のネットワーク状態をご確認いただくか、ページを再読込してください。
+              </p>
+            </div>
           )}
         </div>
       </div>
@@ -209,8 +232,18 @@ function AnnouncementSection({ items }: { items: Announcement[] }) {
 
   const open = async (a: Announcement) => {
     setDetail({ title: a.title, html: null, loading: true })
-    const html = await loadAnnouncementDetail(a.id)
-    setDetail({ title: a.title, html, loading: false })
+    const res = await loadAnnouncementDetail(a.id, a.title)
+    if (res) {
+      setDetail({
+        title: res.title || a.title,
+        sender: res.sender,
+        period: res.period,
+        html: res.bodyHtml || null,
+        loading: false,
+      })
+    } else {
+      setDetail({ title: a.title, html: null, loading: false })
+    }
   }
 
   return (
