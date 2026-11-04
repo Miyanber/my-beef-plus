@@ -74,7 +74,7 @@ export function TopHeader() {
           </AvatarFallback>
         </Avatar>
         <div className="hidden leading-tight sm:block">
-          <p className="text-sm font-semibold text-foreground">宮崎 聖也</p>
+          <p className="text-sm font-semibold text-foreground">神戸 太郎</p>
           <p className="text-[11px] text-muted-foreground">Seiya Miyazaki</p>
         </div>
       </div>
