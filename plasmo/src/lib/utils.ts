@@ -80,3 +80,39 @@ export const executeIfExpired = async <T extends { lastUpdated: string }>(
     await callback();
   }
 };
+
+
+
+/**
+ * DOMContentLoaded を過ぎ、ページ側の ready ハンドラ (Quill初期化など) が
+ * 一巡するまで待機する。content script は document_start で動くため必要。
+ */
+export function waitForDomReady(): Promise<void> {
+  return new Promise((resolve) => {
+    const settle = () => setTimeout(resolve, 0);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", settle, { once: true });
+    } else {
+      settle();
+    }
+  });
+}
+
+const HIDE_NATIVE_STYLE_ID = "my-beef-plus-hide-native";
+
+/**
+ * BEEF+ 本来の画面 (#contentsWrapper) の表示/非表示を切り替える。
+ * 要素は DOM に残すため、スクレイピングやネイティブのダウンロードフォームは引き続き使える。
+ * スクレイピングに失敗したときは false にして、元の画面にフォールバックする。
+ */
+export function setNativeHidden(hidden: boolean): void {
+  const existing = document.getElementById(HIDE_NATIVE_STYLE_ID);
+  if (hidden && !existing) {
+    const style = document.createElement("style");
+    style.id = HIDE_NATIVE_STYLE_ID;
+    style.textContent = "#contentsWrapper { display: none !important; }";
+    (document.head ?? document.documentElement).appendChild(style);
+  } else if (!hidden && existing) {
+    existing.remove();
+  }
+}

@@ -18,9 +18,14 @@ const NAV_ITEMS = [
   { label: "HOME", path: "/lms/timetable", icon: Home },
   { label: "課題・テスト一覧", path: "/lms/task", icon: ClipboardList },
   { label: "授業情報", path: "/lms/online", icon: BookOpen },
-  { label: "コース検索", path: "/lms/course/search", icon: Search },
+  { label: "コース検索", path: "/course/search", icon: Search },
   { label: "BEEF+ Venture", path: "https://ventureplus.center.kobe-u.ac.jp/login", icon: Sparkles },
 ]
+
+function isActivePath(path: string): boolean {
+  const current = window.location.pathname
+  return current === path || current.startsWith(path + "/")
+}
 
 export function AppSidebar() {
   // 初期値を undefined にして、ストレージ読み込み中であることを検知する
@@ -130,7 +135,7 @@ function Navigation({ isOpen }: { isOpen: boolean }) {
   return (
     <nav className="flex flex-col gap-1.5" aria-label="メインナビゲーション">
       {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
-        const active = window.location.pathname === path;
+        const active = isActivePath(path);
         return (
           <a
             key={label}
