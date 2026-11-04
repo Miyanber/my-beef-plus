@@ -4,7 +4,6 @@
  */
 import { sanitizeHtml } from "./parsers/dom";
 import type { AnnouncementDetail } from "./timetable-data";
-import { waitForSelector } from "./utils";
 
 /** 時間割の年度・期間セレクトを書き換えて、BEEF+ のフォームを送信する */
 export function submitTimetableForm(patch: { year?: string; termCode?: string }): void {
@@ -26,13 +25,65 @@ export function goToCurrentTimetable(): void {
   document.querySelector<HTMLFormElement>("#todaysTimetable")?.submit();
 }
 
+/** メインワールドのコンテキストでインラインスクリプトを実行する */
+function runInMainWorld(code: string): void {
+  const script = document.createElement("script");
+  script.textContent = code;
+  (document.head || document.documentElement).appendChild(script);
+  script.remove();
+}
+
+/** Quill の setJsonData 引数から Delta JSON 文字列を安全に抽出して HTML に変換する */
+function extractBodyFromScript(scriptText: string): string | null {
+  // setJsonData( の直後にある文字列リテラルをキャプチャ
+  const match = scriptText.match(/setJsonData\(\s*"((?:[^"\\]|\\.)*)"/);
+  if (!match) return null;
+
+  try {
+    const unescaped = JSON.parse(`"${match[1]}"`);
+    const delta = typeof unescaped === "string" ? JSON.parse(unescaped) : unescaped;
+    if (Array.isArray(delta?.ops)) {
+      const text = delta.ops.map((op: { insert?: string }) => op.insert || "").join("");
+      if (text.trim()) {
+        return text
+          .split("\n")
+          .map((line: string) => `<p>${line || "<br>"}</p>`)
+          .join("");
+      }
+    }
+  } catch {
+    // パース失敗時は null
+  }
+  return null;
+}
+
 /**
  * 講義トップのお知らせ詳細を取得する。
- * ネイティブのリンク (onclick = InfoDetailCourseTop) をクリックしてBEEF+に詳細ダイアログを読み込ませ、
- * DOM からタイトル・発信者・掲示日・本文(Quill HTML)を構造化して抽出する。
+ * メインワールドで InfoDetailCourseTop を直接呼び出して BEEF+ に詳細ダイアログを読み込ませ、
+ * DOM またはスクリプトからタイトル・発信者・掲示日・本文を抽出する。
  */
 export async function loadAnnouncementDetail(id: string, fallbackTitle: string = ""): Promise<AnnouncementDetail | null> {
-  // 1. 対象のお知らせリンクを探す
+  // 1. メインワールドで InfoDetailCourseTop を直接発火
+  runInMainWorld(`
+    (function() {
+      try {
+        var fakeEvent = {
+          preventDefault: function() {},
+          stopPropagation: function() {},
+          target: document.body
+        };
+        if (typeof InfoDetailCourseTop === 'function') {
+          InfoDetailCourseTop(fakeEvent, ${JSON.stringify(id)});
+        } else if (typeof InfoDetail === 'function') {
+          InfoDetail(fakeEvent, ${JSON.stringify(id)}, "");
+        }
+      } catch (err) {
+        console.warn("[my-beef-plus] main-world InfoDetailCourseTop error:", err);
+      }
+    })();
+  `);
+
+  // 2. DOM のリンクも念のためクリック発火
   const links = Array.from(document.querySelectorAll<HTMLElement>("a.infoTitle, #courseViewInformation a, a[onclick*='InfoDetail']"));
   const link = links.find((a) => {
     const onclick = a.getAttribute("onclick") ?? "";
@@ -49,29 +100,30 @@ export async function loadAnnouncementDetail(id: string, fallbackTitle: string =
     );
   });
 
-  if (!link) {
-    console.warn("[my-beef-plus] announcement link not found for id:", id);
-    return null;
+  if (link) {
+    try {
+      link.click();
+      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
+    } catch {
+      // 無視
+    }
   }
 
-  // 2. クリックしてBEEF+本来のダイアログ読み込みを発火
-  link.click();
-  link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
-
-  // 3. ネイティブのダイアログが画面に被らないよう非表示にする処理
+  // 3. ネイティブのダイアログが自前UIの背後でチラつかないよう非表示（ただしスクリプト実行を壊さないよう透明化）
   const hideNativeDialog = () => {
-    const dialogs = document.querySelectorAll<HTMLElement>(".ui-dialog");
-    dialogs.forEach((d) => d.style.setProperty("display", "none", "important"));
-    const overlays = document.querySelectorAll<HTMLElement>(".ui-widget-overlay");
-    overlays.forEach((o) => o.style.setProperty("display", "none", "important"));
+    document.querySelectorAll<HTMLElement>(".ui-dialog, .ui-widget-overlay").forEach((el) => {
+      el.style.setProperty("opacity", "0", "important");
+      el.style.setProperty("pointer-events", "none", "important");
+      el.style.setProperty("z-index", "-9999", "important");
+    });
   };
 
   try {
-    // 4. ダイアログ内に本文が読み込まれるのを待つ (最大5秒: 100ms * 50)
+    // 4. ダイアログ内に情報が読み込まれるのを待つ (最大5秒: 100ms * 50)
     for (let i = 0; i < 50; i++) {
       hideNativeDialog();
 
-      const view = document.querySelector("#info_detail_view");
+      const view = document.querySelector("#info_detail_view, .ui-dialog-content");
       if (view) {
         const title = view.querySelector("#osiraseTitle")?.textContent?.trim() || fallbackTitle;
         let sender = "";
@@ -84,54 +136,52 @@ export async function loadAnnouncementDetail(id: string, fallbackTitle: string =
           if (header === "掲示日" && val) period = val;
         });
 
-        // 本文の取得（QuillエディタのDOMから）
-        const qlEditor = view.querySelector(".ql-editor, #topInofrmationDetailParts");
         let bodyHtml = "";
 
+        // パターン1: レンダリング済みの .ql-editor
+        const qlEditor = view.querySelector(".ql-editor");
         if (qlEditor && qlEditor.textContent && qlEditor.textContent.trim().length > 0) {
-          const editorInner = qlEditor.classList.contains("ql-editor") ? qlEditor : qlEditor.querySelector(".ql-editor");
-          if (editorInner && editorInner.textContent?.trim()) {
-            bodyHtml = sanitizeHtml(editorInner.innerHTML, document);
-          } else if (qlEditor.textContent.trim()) {
-            bodyHtml = sanitizeHtml(qlEditor.innerHTML, document);
-          }
+          bodyHtml = sanitizeHtml(qlEditor.innerHTML, document);
         }
 
-        // DOMにまだ反映されていない場合、script内のJSONから抽出を試みる
+        // パターン2: Quill 初期化前の script 内 Delta JSON
         if (!bodyHtml) {
           const scripts = view.querySelectorAll("script");
           for (const s of Array.from(scripts)) {
-            const text = s.textContent || "";
-            const jsonIdx = text.indexOf("setJsonData(");
-            if (jsonIdx !== -1) {
-              const start = text.indexOf('"', jsonIdx);
-              const end = text.lastIndexOf('")');
-              if (start !== -1 && end > start) {
-                const rawJson = text.slice(start, end + 1);
-                try {
-                  const unescaped = JSON.parse(rawJson);
-                  const delta = typeof unescaped === "string" ? JSON.parse(unescaped) : unescaped;
-                  if (Array.isArray(delta?.ops)) {
-                    const extractedText = delta.ops.map((op: { insert?: string }) => op.insert || "").join("");
-                    bodyHtml = extractedText
-                      .split("\n")
-                      .map((line: string) => `<p>${line || "<br>"}</p>`)
-                      .join("");
-                    break;
-                  }
-                } catch {
-                  // パース失敗時はスキップ
-                }
-              }
+            const extracted = extractBodyFromScript(s.textContent || "");
+            if (extracted) {
+              bodyHtml = extracted;
+              break;
             }
           }
         }
 
-        // 本文が取得できた場合、即座に返却！
+        // パターン3: #topInofrmationDetailParts 直下のテキスト
+        if (!bodyHtml) {
+          const parts = view.querySelector("#topInofrmationDetailParts");
+          if (parts && parts.textContent && parts.textContent.trim().length > 0) {
+            bodyHtml = sanitizeHtml(parts.innerHTML, document);
+          }
+        }
+
+        // パターン4: 「内容」ヘッダーの .contents-input-area
+        if (!bodyHtml) {
+          view.querySelectorAll(".contents-detail").forEach((dt) => {
+            const header = dt.querySelector(".contents-header")?.textContent?.trim();
+            if (header === "内容") {
+              const inputArea = dt.querySelector(".contents-input-area");
+              if (inputArea && inputArea.textContent && inputArea.textContent.trim().length > 0) {
+                bodyHtml = sanitizeHtml(inputArea.innerHTML, document);
+              }
+            }
+          });
+        }
+
+        // 本文が取得できた場合は即座に返却
         if (bodyHtml && bodyHtml.trim()) {
           return {
             id,
-            title,
+            title: title || fallbackTitle,
             sender,
             period,
             bodyHtml,
@@ -142,16 +192,42 @@ export async function loadAnnouncementDetail(id: string, fallbackTitle: string =
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    // タイムアウトしてもタイトル等が存在すれば返却
-    const finalView = document.querySelector("#info_detail_view");
+    // タイムアウト時のフォールバック
+    const finalView = document.querySelector("#info_detail_view, .ui-dialog-content");
     if (finalView) {
       const title = finalView.querySelector("#osiraseTitle")?.textContent?.trim() || fallbackTitle;
+      let sender = "";
+      let period = "";
+      finalView.querySelectorAll(".contents-detail").forEach((dt) => {
+        const header = dt.querySelector(".contents-header")?.textContent?.trim();
+        const val = dt.querySelector(".contents-input-area")?.textContent?.replace(/\s+/g, " ")?.trim();
+        if (header === "発信者" && val) sender = val;
+        if (header === "掲示日" && val) period = val;
+      });
+
+      // script 内の Delta JSON を再度走査
+      let bodyHtml = "";
+      finalView.querySelectorAll("script").forEach((s) => {
+        const extracted = extractBodyFromScript(s.textContent || "");
+        if (extracted && !bodyHtml) bodyHtml = extracted;
+      });
+
+      if (bodyHtml) {
+        return {
+          id,
+          title: title || fallbackTitle,
+          sender,
+          period,
+          bodyHtml,
+        };
+      }
+
       if (title) {
         return {
           id,
           title,
-          sender: "",
-          period: "",
+          sender,
+          period,
           bodyHtml: "<p class='text-muted-foreground'>本文の読み込みがタイムアウトしました。標準画面から確認してください。</p>",
         };
       }
