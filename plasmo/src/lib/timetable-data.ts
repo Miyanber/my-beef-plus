@@ -12,7 +12,38 @@ export const DAYS: { key: DayKey; label: string; sub: string }[] = [
 
 export const PERIODS = [1, 2, 3, 4, 5, 6];
 
-interface Message {
+export const COURSE_COLORS: CourseColor[] = ["violet", "blue", "sky", "amber", "rose", "teal"];
+
+/** 科目コードなどから決定的にカラーを選ぶ（同じ科目は常に同じ色になる） */
+export function pickCourseColor(seed: string): CourseColor {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  }
+  return COURSE_COLORS[hash % COURSE_COLORS.length];
+}
+
+// ---------------------------------------------------------------------------
+// 共通
+// ---------------------------------------------------------------------------
+
+/** BEEF+ 上の表記そのままの日時範囲 (例: "2026/06/16 12:00") */
+export interface DateRange {
+  start: string;
+  end: string;
+}
+
+/** 一覧に表示するリンク（「提出する」「結果表示」など） */
+export interface ActionLink {
+  label: string;
+  url: string;
+}
+
+// ---------------------------------------------------------------------------
+// 講義詳細 (/lms/course)
+// ---------------------------------------------------------------------------
+
+export interface Message {
   title: string;
   createdAt: string;
   status: string;
@@ -21,82 +52,131 @@ interface Message {
 
 // お知らせ
 export interface Announcement {
+  /** BEEF+ 内部のお知らせID (InfoDetailCourseTop の引数) */
+  id: string;
   title: string;
-  postingPeriod: {
-    start: string;
-    end: string;
-  };
-  sender: string;
-  content: string; // HTML
+  postingPeriod: DateRange;
 }
 
-// 教材
+// 資料ファイル / リンク / 動画
+export interface Attachment {
+  /** HTML上の要素のID (例: "material264629") */
+  materialId: string;
+  kind: "file" | "link" | "video";
+  title: string; // 資料タイトル
+  fileName: string; // ファイル名
+  comment: string; // コメント
+  updatedAt: string; // 登録日
+  /** kind が "link" のときの遷移先 */
+  href?: string;
+  /** kind が "file" のときにダウンロードAPIへ渡す情報 */
+  download?: {
+    fileName: string;
+    objectName: string;
+    resourceId: string;
+    contentId: string;
+    endDate: string;
+  };
+}
+
+// 教材（第N回ごとのまとまり）
 export interface LectureMaterial {
   title: string;
-  publicationPeriod: {
-    start: string;
-    end: string;
-  };
-  description: string;
+  publicationPeriod: DateRange;
+  description: string; // HTML (サニタイズ済み)
   attachments: Attachment[];
 }
 
-// 資料ファイル
-export interface Attachment {
-  title: string; // 資料タイトル (exercise.pdf)
-  fileName: string; // ファイル名 (exercise.pdf)
-  comment: string; // コメント (空文字)
-  materialId: string; // HTML上の要素のID（クリック対象）
-}
-
-// 課題
-interface Assignment {
-  id: string; // 課題を一意に識別するID
-  title: string; // 課題タイトル (演習問題 (2026/6/16・6/23))
-  submissionPeriod: {
-    // 提出期間
-    start: string; // 提出開始日 (2026/06/16 12:00)
-    end: string; // 提出終了日 (2026/06/27 00:00)
-  };
-  submissionStatus:
+export type SubmissionStatus =
   | "SUBMITTED_ON_TIME"
   | "NOT_SUBMITTED_YET"
-  | "SUBMITTED_OUT_TIME"; // 提出状況 (期限内提出)
-  url: string; // 課題提出ページへのURL
+  | "SUBMITTED_OUT_TIME"
+  | "UNKNOWN";
+
+// 課題
+export interface Assignment {
+  id: string;
+  title: string;
+  submissionPeriod: DateRange;
+  submissionStatus: SubmissionStatus;
+  /** BEEF+ 上の表記 (期限内提出 / 未提出 など) */
+  statusText: string;
+  url: string;
 }
 
-interface Quiz {
-  id: string; // テストを一意に識別するID
-  title: string; // テストタイトル (第11回テスト)
-  examinationPeriod: {
-    // 解答期間・期限
-    start: string; // 開始日時 (2026/06/26 10:40)
-    end: string; // 終了日時・期限 (2026/06/26 12:15)
-  };
-  status: QuizStatus; // 解答ステータス (解答済)
-  resultUrl?: string; // 結果ページへのURL (解答済の場合のみ)
-  answerUrl?: string; // 解答ページへのURL (解答済の場合のみ)
+export type QuizStatus = "COMPLETED" | "UNANSWERED" | "EXPIRED" | "UNKNOWN";
+
+// テスト
+export interface Quiz {
+  id: string;
+  title: string;
+  examinationPeriod: DateRange;
+  status: QuizStatus;
+  statusText: string;
+  /** タイトルのリンク先（解答可能 / 結果表示のとき） */
+  url: string;
+  actions: ActionLink[];
 }
 
-// ステータスを型安全に管理する場合のEnum例
-type QuizStatus = "COMPLETED" | "UNANSWERED" | "EXPIRED"; // 解答済, 未解答, 期間外 など
+// アンケート
+export interface Survey {
+  id: string;
+  title: string;
+  period: DateRange;
+  resultOpenPeriod: string;
+  url: string;
+  actions: ActionLink[];
+}
 
+// 掲示板
 export interface BulletinBoardItem {
-  id: string; // 掲示板アイテムを一意に識別するID
-  title: string; // テーマタイトル
-  // 投稿期間・期限
-  postingPeriod: {
-    start: string; // 開始日時
-    end: string; // 終了日時・期限
-  };
-  url: string; // 詳細ページへのURL
+  id: string;
+  title: string;
+  postingPeriod: DateRange;
+  url: string;
 }
+
+export interface CourseHeader {
+  year: string; // 2026
+  semesterLabel: string; // "2026 前期"
+  code: string; // 科目コード (1X017)
+  name: string; // 科目名
+  teachers: string[];
+  schedule: string; // "前期/金曜日/２時限"
+}
+
+// 授業の「詳細・中身」のデータ（LMSから取得）
+export interface CourseDetail {
+  id: string; // idnumber (TimetableCourse.id と一致)
+  lastUpdated: string;
+  header?: CourseHeader;
+  courseSummary?: {
+    text: string;
+    rawHTML: string;
+  };
+  classDetails?: {
+    rawHTML: string;
+    updatedAt: string;
+  };
+  newMessageUrl?: string;
+  messages: Message[];
+  announcements: Announcement[];
+  lectureMaterials: LectureMaterial[];
+  assignments: Assignment[];
+  quizzes: Quiz[];
+  surveys: Survey[];
+  bulletinBoardItems: BulletinBoardItem[];
+}
+
+// ---------------------------------------------------------------------------
+// 時間割 (/lms/timetable)
+// ---------------------------------------------------------------------------
 
 // 時間割の「枠」としての授業データ
 export interface TimetableCourse {
-  id: string;        // 固有ID (e.g., '20261X0521001')
-  code: string;      // 科目コード
-  title: string;     // 授業名
+  id: string; // 固有ID (e.g., '20261X0521001')
+  code: string; // 科目コード
+  title: string; // 授業名
   teachers: string[]; // 担当教員
   color: CourseColor;
   dates: Array<{
@@ -105,30 +185,61 @@ export interface TimetableCourse {
   }>;
 }
 
+export interface SelectOption {
+  value: string;
+  label: string;
+}
+
 // 時間割全体のストア型
 export interface TimetableStore {
   lastUpdated: string; // タイムスタンプ
+  year: string; // 表示中の年度
+  termCode: string; // 表示中の期間コード ("" = 既定)
+  weekRange: string; // "2026年11月02日 ～ 2026年11月07日"
+  /** 表示中の週が「今週」かどうか (BEEF+ の「現在」ボタンが無効なとき true) */
+  isCurrent: boolean;
+  yearOptions: SelectOption[];
+  termOptions: SelectOption[];
   courses: Record<string, TimetableCourse>;
 }
 
-// 授業の「詳細・中身」のデータ（LMSから取得するような情報）
-export interface CourseDetail {
-  id: string; // TimetableCourse.id と紐づく
+// ---------------------------------------------------------------------------
+// 課題・テスト一覧 (/lms/task)
+// ---------------------------------------------------------------------------
+
+export type TaskKind = "REPORT" | "EXAM" | "SURVEY" | "OTHER";
+
+export interface TaskItem {
+  id: string;
+  courseId: string;
+  courseName: string;
+  kind: TaskKind;
+  kindLabel: string; // BEEF+ 上の表記 (課題 / テスト / アンケート)
+  title: string;
+  url: string;
+  deadline: string; // "2026/11/05 12:00:00"
+}
+
+export interface TaskStore {
   lastUpdated: string;
-  courseSummary?: {
-    text: string;
-    rawHTML: string;
-  }; 
-  classDetails?: {
-    rawHTML: string; // 危険性を意識しやすい命名に
-    updatedAt: string; // ISO 8601形式などの文字列、または number (ミリ秒)
-  };
-  messages?: Message[];
-  announcements?: Announcement[];
-  lectureMaterials?: LectureMaterial[];
-  assignments?: Assignment[];
-  quizzes?: Quiz[];
-  bulletinBoardItems?: BulletinBoardItem[];
+  items: TaskItem[];
+}
+
+// ---------------------------------------------------------------------------
+// 画面共通（ヘッダー等）
+// ---------------------------------------------------------------------------
+
+export interface HeaderNotice {
+  id: string;
+  title: string;
+  url: string;
+  isNew: boolean;
+}
+
+export interface GlobalChrome {
+  userName: string;
+  infos: HeaderNotice[];
+  updates: HeaderNotice[];
 }
 
 export const COLOR_STYLES: Record<

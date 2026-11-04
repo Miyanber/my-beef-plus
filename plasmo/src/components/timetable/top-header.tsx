@@ -1,64 +1,138 @@
 "use client"
 
-import { MessageSquare, Bell } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { MessageSquare, Bell, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
+import { cn } from "@/lib/utils"
+import type { GlobalChrome, HeaderNotice } from "@/lib/timetable-data"
 import { ThemeToggle } from "../ThemeToggle"
 
 const LINKS = [
-  { jp: "マニュアル", en: "Manual" },
-  { jp: "問い合わせ", en: "Contacts" },
-  { jp: "個人設定", en: "Settings" },
-  { jp: "サインアウト", en: "Signout" },
+  { jp: "マニュアル", en: "Manual", href: "/common/support/manual", external: true },
+  {
+    jp: "問い合わせ",
+    en: "Contacts",
+    href: "https://www.istc.kobe-u.ac.jp/services/StandardService/beefplus/faq/",
+    external: true,
+  },
+  { jp: "個人設定", en: "Settings", href: "/common/settings/", external: false },
+  { jp: "サインアウト", en: "Signout", href: "/logout", external: false },
 ]
 
-function IconButton({
-  label,
-  children,
-}: {
+interface NoticeMenuProps {
   label: string
-  children: React.ReactNode
-}) {
+  icon: React.ReactNode
+  notices: HeaderNotice[]
+  /** 未読バッジに数字を出すか (出さない場合は赤い点のみ) */
+  moreHref: string
+  moreLabel: string
+  emptyText: string
+}
+
+function NoticeMenu({ label, icon, notices, moreHref, moreLabel, emptyText }: NoticeMenuProps) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const unread = notices.filter((n) => n.isNew).length
+
+  // メニュー外のクリック / Escape で閉じる (Shadow DOM 内なので composedPath を使う)
+  useEffect(() => {
+    if (!open) return
+    const onPointerDown = (e: MouseEvent) => {
+      if (rootRef.current && !e.composedPath().includes(rootRef.current)) setOpen(false)
+    }
+    const onKeyDown = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false)
+    document.addEventListener("mousedown", onPointerDown)
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown)
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [open])
+
   return (
-    <button
-      type="button"
-      aria-label={label}
-      className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-    >
-      {children}
-      <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-rose-500 ring-2 ring-card" />
-    </button>
+    <div className="relative" ref={rootRef}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        {icon}
+        {unread > 0 && (
+          <span className="absolute top-0.5 right-0.5 flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] leading-4 font-semibold text-white ring-2 ring-card">
+            {unread > 9 ? "9+" : unread}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-11 z-40 w-80 overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+          <p className="border-b border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground">{label}</p>
+          <ul className="max-h-80 overflow-y-auto">
+            {notices.length === 0 && <li className="px-4 py-6 text-center text-sm text-muted-foreground">{emptyText}</li>}
+            {notices.map((n) => (
+              <li key={n.id} className="border-b border-border/60 last:border-b-0">
+                <a href={n.url} className="flex items-start gap-2 px-4 py-2.5 text-sm hover:bg-muted">
+                  {n.isNew && <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-rose-500" />}
+                  <span className="line-clamp-2 leading-snug">{n.title}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+          <a
+            href={moreHref}
+            className="block border-t border-border px-4 py-2.5 text-center text-xs font-medium text-primary hover:bg-muted"
+          >
+            {moreLabel}
+          </a>
+        </div>
+      )}
+    </div>
   )
 }
 
-export function TopHeader() {
+export function TopHeader({ chrome }: { chrome?: GlobalChrome }) {
+  const userName = chrome?.userName ?? ""
+
   return (
     <header className="sticky w-full top-0 z-20 flex h-16 items-center justify-end gap-4 border-b border-border bg-card/80 pl-6 pr-8 backdrop-blur">
       <div className="flex items-center gap-1">
-        <IconButton label="メッセージ">
-          <MessageSquare className="size-5" />
-        </IconButton>
-        <IconButton label="通知">
-          <Bell className="size-5" />
-        </IconButton>
+        <NoticeMenu
+          label="お知らせ"
+          icon={<MessageSquare className="size-5" />}
+          notices={chrome?.infos ?? []}
+          moreHref="/lms/course/information/list"
+          moreLabel="お知らせ一覧へ"
+          emptyText="新しいお知らせはありません"
+        />
+        <NoticeMenu
+          label="更新通知"
+          icon={<Bell className="size-5" />}
+          notices={chrome?.updates ?? []}
+          moreHref="/updateinfo"
+          moreLabel="更新通知一覧へ"
+          emptyText="更新通知はありません"
+        />
       </div>
 
       <Separator orientation="vertical" className="h-6" />
 
-      <nav
-        aria-label="ユーザーメニュー"
-        className="hidden items-center gap-5 md:flex"
-      >
+      <nav aria-label="ユーザーメニュー" className="hidden items-center gap-5 md:flex">
         {LINKS.map((link) => (
           <a
             key={link.en}
-            href="#"
+            href={link.href}
+            target={link.external ? "_blank" : undefined}
+            rel={link.external ? "noreferrer" : undefined}
             className="group flex flex-col leading-tight text-muted-foreground transition-colors hover:text-foreground"
           >
-            <span className="text-sm font-medium">{link.jp}</span>
-            <span className="text-[10px] text-muted-foreground/60 group-hover:text-foreground/60">
-              {link.en}
+            <span className="flex items-center gap-1 text-sm font-medium">
+              {link.jp}
+              {link.external && <ExternalLink className="size-3 opacity-50" />}
             </span>
+            <span className="text-[10px] text-muted-foreground/60 group-hover:text-foreground/60">{link.en}</span>
           </a>
         ))}
       </nav>
@@ -70,12 +144,12 @@ export function TopHeader() {
       <div className="flex items-center gap-2.5">
         <Avatar className="size-9 border border-border shadow-sm">
           <AvatarFallback className="bg-primary text-sm font-semibold text-primary-foreground">
-            K
+            {userName.charAt(0) || "?"}
           </AvatarFallback>
         </Avatar>
-        <div className="hidden leading-tight sm:block">
-          <p className="text-sm font-semibold text-foreground">神戸 太郎</p>
-          <p className="text-[11px] text-muted-foreground">Seiya Miyazaki</p>
+        <div className={cn("hidden leading-tight sm:block", !userName && "invisible")}>
+          <p className="text-sm font-semibold text-foreground">{userName || "…"}</p>
+          <p className="text-[11px] text-muted-foreground">ログイン中</p>
         </div>
       </div>
     </header>
