@@ -1,0 +1,302 @@
+/* ==========================================================================
+   BEEF+ ネイティブ画面用ダークテーマ CSS
+   独自UIが整備されていない画面（課題提出、テスト、アンケート等）に適用される
+   ========================================================================== */
+
+/* 1. 右上の固定トグルボタンとの重なり防止（ライト・ダーク共通で適用） */
+#page_head,
+.page-head,
+.page-head-navi {
+  padding-right: 56px !important;
+  box-sizing: border-box !important;
+}
+
+@media screen and (max-width: 768px) {
+  .page-head-navi-sp {
+    right: 56px !important;
+  }
+}
+
+/* 2. html.dark が付与されている場合のみ発火する包括的ダークスタイル */
+html.dark {
+  color-scheme: dark !important;
+}
+
+/* 基本背景とテキストカラー */
+html.dark,
+html.dark body,
+html.dark #contentsWrapper,
+html.dark #pageMain,
+html.dark #pageContents,
+html.dark .page-main,
+html.dark .page-outline {
+  background-color: #121215 !important;
+  color: #f4f4f5 !important;
+}
+
+/* ==========================================================================
+   ヘッダー (#global-header)
+   ========================================================================== */
+html.dark #global-header,
+html.dark .global-header,
+html.dark #page_head,
+html.dark .page-head {
+  background-color: #18181e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .page-head-navi a,
+html.dark .page-head-navi-colomn {
+  color: #a1a1aa !important;
+}
+
+html.dark .page-head-navi a:hover,
+html.dark .page-head-navi-colomn:hover {
+  color: #ffffff !important;
+}
+
+html.dark .hamburger-line {
+  background-color: #e4e4e7 !important;
+}
+
+/* お知らせ・更新通知ドロップダウンメニュー */
+html.dark .header-control-list,
+html.dark .control-menu {
+  background-color: #1f1f26 !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #f4f4f5 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+}
+
+html.dark .header-control-list a,
+html.dark .control-menu a,
+html.dark .header-control-colomn,
+html.dark .control-menu-colomn {
+  color: #e4e4e7 !important;
+}
+
+html.dark .header-control-list a:hover,
+html.dark .control-menu a:hover,
+html.dark .header-control-colomn:hover,
+html.dark .control-menu-colomn:hover {
+  background-color: #2b2b36 !important;
+}
+
+html.dark .header-control-color {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   サイドメニュー (#sidemenu)
+   ========================================================================== */
+html.dark #sidemenu,
+html.dark .sidemenu {
+  background-color: #18181e !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .sidemenu-head {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .sidemenu-link,
+html.dark .sidemenu-link-txt,
+html.dark .sidemenu-list-colomn,
+html.dark .sidemenu-list-txt {
+  color: #d4d4d8 !important;
+}
+
+html.dark .sidemenu-link:hover,
+html.dark .sidemenu-list-colomn:hover {
+  background-color: #262630 !important;
+  color: #ffffff !important;
+}
+
+html.dark .sidemenu-pull {
+  background-color: #202028 !important;
+  color: #e4e4e7 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   コースヘッダー・タイトル・カードブロック
+   ========================================================================== */
+html.dark .course-header,
+html.dark .course-header-detail,
+html.dark .block,
+html.dark .contents-detail,
+html.dark .contents-list,
+html.dark .submissionFileResult {
+  background-color: #1c1c23 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #f4f4f5 !important;
+}
+
+html.dark .course-title-txt,
+html.dark .contents-title,
+html.dark .contents-title-txt,
+html.dark .block-title-txt,
+html.dark .contents-header,
+html.dark .contents-header-txt,
+html.dark .bold-txt {
+  color: #ffffff !important;
+}
+
+html.dark .block-title,
+html.dark .block-wide {
+  background-color: #262633 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ユーザー表示バー */
+html.dark .login-view {
+  background-color: #18181e !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #d4d4d8 !important;
+}
+
+/* ==========================================================================
+   入力フォーム・ボタン・UI部品
+   ========================================================================== */
+html.dark input[type="text"],
+html.dark input[type="password"],
+html.dark textarea,
+html.dark select,
+html.dark .input,
+html.dark .input-box {
+  background-color: #121216 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #f4f4f5 !important;
+  border-radius: 6px !important;
+}
+
+html.dark input[type="text"]:focus,
+html.dark input[type="password"]:focus,
+html.dark textarea:focus,
+html.dark select:focus {
+  border-color: #6366f1 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3) !important;
+}
+
+/* ボタン */
+html.dark button:not(#plasmo-shadow-container *),
+html.dark .btn,
+html.dark .btn-txt,
+html.dark .under-btn,
+html.dark .btn-color,
+html.dark .fileSelectButton {
+  background-color: #2d2d3a !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  border-radius: 6px !important;
+  transition: all 0.15s ease !important;
+}
+
+html.dark button:not(#plasmo-shadow-container *):hover,
+html.dark .btn:hover,
+html.dark .under-btn:hover,
+html.dark .fileSelectButton:hover {
+  background-color: #3b3b4d !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* リンク */
+html.dark .link-txt,
+html.dark a.course-info-txt,
+html.dark .downloadFile,
+html.dark a:not(.btn):not(.sidemenu-link):not(.page-head-navi-colomn):not(#plasmo-shadow-container *) {
+  color: #818cf8 !important;
+}
+
+html.dark .link-txt:hover,
+html.dark a.course-info-txt:hover,
+html.dark .downloadFile:hover {
+  color: #a5b4fc !important;
+  text-decoration: underline !important;
+}
+
+/* ドラッグ＆ドロップエリア */
+html.dark .drag-drop-area,
+html.dark #fileDadArea {
+  background-color: #15151c !important;
+  border: 2px dashed rgba(255, 255, 255, 0.22) !important;
+  color: #a1a1aa !important;
+  border-radius: 8px !important;
+}
+
+/* ==========================================================================
+   Quill エディタのダーク対応 & 白背景・黒文字インラインスタイルの強制解除
+   ========================================================================== */
+html.dark .ql-container.ql-snow,
+html.dark .ql-snow .ql-editor {
+  background-color: #16161c !important;
+  color: #f4f4f5 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* インラインで埋め込まれた白背景や黒文字を強制リセット */
+html.dark .ql-editor span[style*="background-color: rgb(255, 255, 255)"],
+html.dark .ql-editor span[style*="background-color:#ffffff"],
+html.dark .ql-editor span[style*="background-color: #fff"],
+html.dark .ql-editor p[style*="background-color: rgb(255, 255, 255)"],
+html.dark .ql-editor div[style*="background-color: rgb(255, 255, 255)"] {
+  background-color: transparent !important;
+}
+
+html.dark .ql-editor span[style*="color: rgb(0, 0, 0)"],
+html.dark .ql-editor span[style*="color:#000000"],
+html.dark .ql-editor span[style*="color: #000"],
+html.dark .ql-editor p[style*="color: rgb(0, 0, 0)"],
+html.dark .ql-editor div[style*="color: rgb(0, 0, 0)"] {
+  color: inherit !important;
+}
+
+/* ==========================================================================
+   テーブル・リスト要素
+   ========================================================================== */
+html.dark table {
+  background-color: #1c1c23 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark th,
+html.dark .contents-tag {
+  background-color: #252530 !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark td,
+html.dark .result-list {
+  background-color: #1c1c23 !important;
+  color: #e4e4e7 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ==========================================================================
+   jQuery UI ダイアログ・モーダル
+   ========================================================================== */
+html.dark .ui-dialog,
+html.dark .ui-widget-content {
+  background-color: #1f1f28 !important;
+  color: #f4f4f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+}
+
+html.dark .ui-widget-header {
+  background-color: #262633 !important;
+  color: #ffffff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .ui-dialog-buttonpane {
+  background-color: #1c1c24 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .ui-widget-overlay {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  opacity: 1 !important;
+}
