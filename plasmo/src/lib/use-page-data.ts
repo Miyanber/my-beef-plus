@@ -1,5 +1,6 @@
 import { Storage } from "@plasmohq/storage";
 import { useEffect, useRef, useState } from "react";
+import { onDataUpdated } from "./router";
 import { scrapeGlobalChrome } from "./scrapers";
 import { getSyncCache, setSyncCache } from "./storage-cache";
 import type { GlobalChrome } from "./timetable-data";
@@ -30,7 +31,6 @@ export function usePageData<T extends { lastUpdated: string }>({ key, scrape, ac
   const [cached, setCached] = useState<T | undefined>(() => {
     const syncData = getSyncCache<T>(key);
     if (syncData && (!accept || accept(syncData))) {
-      // キャッシュが存在する場合、初回レンダー前から即座にネイティブDOMを隠蔽してチラつきを根絶
       setNativeHidden(true);
       return syncData;
     }
@@ -43,30 +43,53 @@ export function usePageData<T extends { lastUpdated: string }>({ key, scrape, ac
   const scrapeRef = useRef(scrape);
   scrapeRef.current = scrape;
 
-  // 2. chrome.storage.local からもバックアップとして非同期読み出し
-  // (localStorage に入りきらなかった場合や、過去バージョンの既存キャッシュを拾う)
+  // key が変わった時（SPAナビゲーションで別の講義等に切り替わった時）
+  useEffect(() => {
+    const syncData = getSyncCache<T>(key);
+    if (syncData && (!accept || accept(syncData))) {
+      setCached(syncData);
+      setFresh(undefined);
+    } else {
+      setCached(undefined);
+      setFresh(undefined);
+    }
+  }, [key]);
+
+  // 2. ルーターからのバックグラウンド再検証完了通知をリッスン (SPA遷移時)
+  useEffect(() => {
+    return onDataUpdated((updatedKey, updatedData) => {
+      if (updatedKey === key) {
+        setFresh(updatedData as T);
+        setStatus("ready");
+      }
+    });
+  }, [key]);
+
+  // 3. chrome.storage.local からもバックアップとして非同期読み出し
   useEffect(() => {
     let cancelled = false;
-    localArea.get<T>(key).then((val) => {
-      if (!cancelled && val && (!accept || accept(val))) {
-        setCached((prev) => {
-          if (!prev) {
-            // 同期キャッシュに未保存だった場合は保存して次回以降の0ms即座表示に備える
-            try {
-              setSyncCache(key, val);
-            } catch {}
-            return val;
-          }
-          return prev;
-        });
-      }
-    }).catch(() => {});
+    localArea
+      .get<T>(key)
+      .then((val) => {
+        if (!cancelled && val && (!accept || accept(val))) {
+          setCached((prev) => {
+            if (!prev) {
+              try {
+                setSyncCache(key, val);
+              } catch {}
+              return val;
+            }
+            return prev;
+          });
+        }
+      })
+      .catch(() => {});
     return () => {
       cancelled = true;
     };
   }, [key]);
 
-  // 3. 最新DOMのスクレイピングとキャッシュの更新
+  // 4. 初回DOM読み込み時のスクレイピング（初回フルリロード時）
   useEffect(() => {
     let cancelled = false;
     scrapeRef
@@ -92,8 +115,6 @@ export function usePageData<T extends { lastUpdated: string }>({ key, scrape, ac
   }, [key]);
 
   const usableCache = cached && (!accept || accept(cached)) ? cached : undefined;
-  
-  // キャッシュがあれば、スクレイピングがエラーになってもキャッシュ表示を優先維持（Zero Risk / 高UX）
   const data = fresh ?? usableCache;
 
   const shouldHideNative = !!data;
