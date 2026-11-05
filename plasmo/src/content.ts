@@ -63,6 +63,7 @@ function injectLegacyThemeStyle(): void {
 }
 
 // 1. document_start 直後に 0ms でテーマを判定・適用（白飛び/FOUCを完全根絶）
+// legacy-theme.css v1.1.0 (shadcn sharp theme)
 const initialTheme = getResolvedTheme()
 applyTheme(initialTheme === "dark")
 injectLegacyThemeStyle()
