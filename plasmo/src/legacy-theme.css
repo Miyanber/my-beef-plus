@@ -30,8 +30,14 @@ html.dark #pageMain,
 html.dark #pageContents,
 html.dark .page-main,
 html.dark .page-outline {
-  background-color: #121215 !important;
-  color: #f4f4f5 !important;
+  background-color: #0f0f13 !important;
+  color: #f1f5f9 !important;
+}
+
+/* 余分な横スクロールの防止 */
+html.dark body,
+html.dark #contentsWrapper {
+  overflow-x: hidden !important;
 }
 
 /* ==========================================================================
@@ -41,13 +47,27 @@ html.dark #global-header,
 html.dark .global-header,
 html.dark #page_head,
 html.dark .page-head {
-  background-color: #18181e !important;
+  background-color: #17171e !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* お知らせ・更新通知アイコン（黒画像を白く反転して視認性を確保） */
+html.dark .header-img,
+html.dark .btn-header-info img {
+  filter: brightness(0) invert(0.9) !important;
+  opacity: 0.9 !important;
+  transition: opacity 0.15s ease !important;
+}
+
+html.dark .btn-header-info:hover .header-img {
+  opacity: 1 !important;
+  filter: brightness(0) invert(1) !important;
 }
 
 html.dark .page-head-navi a,
 html.dark .page-head-navi-colomn {
-  color: #a1a1aa !important;
+  color: #94a3b8 !important;
+  transition: color 0.15s ease !important;
 }
 
 html.dark .page-head-navi a:hover,
@@ -56,30 +76,32 @@ html.dark .page-head-navi-colomn:hover {
 }
 
 html.dark .hamburger-line {
-  background-color: #e4e4e7 !important;
+  background-color: #e2e8f0 !important;
 }
 
 /* お知らせ・更新通知ドロップダウンメニュー */
 html.dark .header-control-list,
 html.dark .control-menu {
-  background-color: #1f1f26 !important;
+  background-color: #1e1e27 !important;
   border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  color: #f4f4f5 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  color: #f1f5f9 !important;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.75) !important;
+  border-radius: 8px !important;
 }
 
 html.dark .header-control-list a,
 html.dark .control-menu a,
 html.dark .header-control-colomn,
 html.dark .control-menu-colomn {
-  color: #e4e4e7 !important;
+  color: #e2e8f0 !important;
 }
 
 html.dark .header-control-list a:hover,
 html.dark .control-menu a:hover,
 html.dark .header-control-colomn:hover,
 html.dark .control-menu-colomn:hover {
-  background-color: #2b2b36 !important;
+  background-color: #2d2d3a !important;
+  color: #ffffff !important;
 }
 
 html.dark .header-control-color {
@@ -91,72 +113,228 @@ html.dark .header-control-color {
    ========================================================================== */
 html.dark #sidemenu,
 html.dark .sidemenu {
-  background-color: #18181e !important;
+  background-color: #17171e !important;
   border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-html.dark .sidemenu-head {
+/* サイドバーロゴエリアの白背景をダークに統一 */
+html.dark .sidemenu-head,
+html.dark .sidemenu-logo {
+  background-color: #17171e !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
+/* ロゴ画像の背景が白く浮かないよう軽微な調整 */
+html.dark .sidemenu-logo img {
+  filter: brightness(0.95) contrast(1.1) !important;
+}
+
+/* サイドバー折りたたみ矢印アイコン */
+html.dark #sidemenuClose,
+html.dark .sidemenu-close-icon,
+html.dark .sidemenu-close-icon img {
+  filter: brightness(0) invert(0.85) !important;
+}
+
+/* メニュー項目（水色の半透明ベタ塗りをリセットし、スッキリしたモダンダークに） */
 html.dark .sidemenu-link,
 html.dark .sidemenu-link-txt,
-html.dark .sidemenu-list-colomn,
-html.dark .sidemenu-list-txt {
-  color: #d4d4d8 !important;
+html.dark .sidemenu-lms-color,
+html.dark .sidemenu-course-search-color {
+  background-color: transparent !important;
+  color: #cbd5e1 !important;
+  border-radius: 6px !important;
+  margin: 2px 8px !important;
+  transition: all 0.15s ease !important;
 }
 
 html.dark .sidemenu-link:hover,
 html.dark .sidemenu-list-colomn:hover {
-  background-color: #262630 !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
   color: #ffffff !important;
 }
 
-html.dark .sidemenu-pull {
-  background-color: #202028 !important;
-  color: #e4e4e7 !important;
+/* メニューアイコンの明るさ補正 */
+html.dark .sidemenu-icon {
+  filter: brightness(1.15) !important;
+}
+
+/* コースコンテンツのアコーディオン見出し */
+html.dark .sidemenu-pull,
+html.dark .sidemenu-lms-pull {
+  background-color: #20202a !important;
+  color: #f1f5f9 !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .sidemenu-list-colomn,
+html.dark .sidemenu-list-txt {
+  color: #94a3b8 !important;
 }
 
 /* ==========================================================================
    コースヘッダー・タイトル・カードブロック
    ========================================================================== */
+
+/* コースタイトル（「2026 後期 3X003 データ解析」を明るいライトブルーにして超見やすく） */
+html.dark .course-title-txt,
+html.dark .course-title-txt a,
+html.dark .course-info-txt,
+html.dark a.course-info-txt {
+  color: #93c5fd !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  text-decoration: none !important;
+}
+
+html.dark .course-title-txt a:hover,
+html.dark a.course-info-txt:hover {
+  color: #bfdbfe !important;
+  text-decoration: underline !important;
+}
+
+/* カード・ブロックの外枠と背景 */
 html.dark .course-header,
 html.dark .course-header-detail,
 html.dark .block,
 html.dark .contents-detail,
 html.dark .contents-list,
 html.dark .submissionFileResult {
-  background-color: #1c1c23 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #f4f4f5 !important;
+  background-color: #17171f !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  color: #f1f5f9 !important;
+  border-radius: 8px !important;
 }
 
-html.dark .course-title-txt,
+/* 見出しタイトル（「課題提出」「既に提出済みの成果物」） */
 html.dark .contents-title,
-html.dark .contents-title-txt,
-html.dark .block-title-txt,
-html.dark .contents-header,
-html.dark .contents-header-txt,
-html.dark .bold-txt {
+html.dark .contents-title-txt {
   color: #ffffff !important;
+  font-size: 1.1rem !important;
+  font-weight: 700 !important;
+  padding: 8px 0 !important;
 }
 
 html.dark .block-title,
-html.dark .block-wide {
-  background-color: #262633 !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+html.dark .block-wide,
+html.dark .report-color {
+  background-color: #22222d !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 7px 7px 0 0 !important;
+}
+
+html.dark .block-title-txt {
+  color: #ffffff !important;
+  font-weight: 700 !important;
 }
 
 /* ユーザー表示バー */
 html.dark .login-view {
-  background-color: #18181e !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: #d4d4d8 !important;
+  background-color: #17171e !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+  padding: 6px 16px !important;
+}
+
+html.dark .login-view-name {
+  color: #e2e8f0 !important;
 }
 
 /* ==========================================================================
-   入力フォーム・ボタン・UI部品
+   項目行（タイトル、内容、添付ファイル、提出期間、期間外提出）の視認性改善
+   ========================================================================== */
+
+/* 各行の区切りをスッキリ整える */
+html.dark .course-header-detail > .contents-detail {
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 0 !important;
+  padding: 10px 14px !important;
+  background-color: transparent !important;
+}
+
+html.dark .course-header-detail > .contents-detail:last-child {
+  border-bottom: none !important;
+}
+
+/* 左側ラベル（落ち着いたスレートグレーで強調） */
+html.dark .contents-header,
+html.dark .contents-header-txt,
+html.dark .contents-header-txt .bold-txt,
+html.dark .contents-header .bold-txt,
+html.dark .bold-txt {
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
+/* 右側値エリア（明るくはっきり読める白） */
+html.dark .contents-input-area,
+html.dark .contents-answer-area {
+  color: #f8fafc !important;
+  line-height: 1.6 !important;
+}
+
+/* ==========================================================================
+   リンク・ダウンロードファイル
+   ========================================================================== */
+html.dark .link-txt,
+html.dark .downloadFile,
+html.dark a.link-txt,
+html.dark a:not(.btn):not(.under-btn):not(.sidemenu-link):not(.page-head-navi-colomn):not(#plasmo-shadow-container *) {
+  color: #60a5fa !important; /* はっきり読めるスカイブルー */
+  font-weight: 500 !important;
+  text-decoration: none !important;
+}
+
+html.dark .link-txt:hover,
+html.dark .downloadFile:hover,
+html.dark a.link-txt:hover {
+  color: #93c5fd !important;
+  text-decoration: underline !important;
+}
+
+/* ==========================================================================
+   ボタンのコントラスト改善（「保存せずに前の画面に戻る」が読めない問題を解消）
+   ========================================================================== */
+html.dark .under-btn,
+html.dark .btn-txt,
+html.dark .btn-color,
+html.dark a.under-btn,
+html.dark .course_on_report_submission,
+html.dark button:not(#plasmo-shadow-container *),
+html.dark .btn,
+html.dark .fileSelectButton {
+  background-color: #2a2a38 !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important; /* 文字色は絶対に白！ */
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+  padding: 8px 18px !important;
+  display: inline-block !important;
+  text-decoration: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  transition: all 0.15s ease !important;
+}
+
+html.dark .under-btn:hover,
+html.dark a.under-btn:hover,
+html.dark button:not(#plasmo-shadow-container *):hover,
+html.dark .btn:hover,
+html.dark .fileSelectButton:hover {
+  background-color: #3b3b4f !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* フッターボタンエリア */
+html.dark .block-under-area {
+  padding: 16px 0 !important;
+}
+
+/* ==========================================================================
+   入力フォーム（テキストボックス、セレクト等）
    ========================================================================== */
 html.dark input[type="text"],
 html.dark input[type="password"],
@@ -164,65 +342,30 @@ html.dark textarea,
 html.dark select,
 html.dark .input,
 html.dark .input-box {
-  background-color: #121216 !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  color: #f4f4f5 !important;
+  background-color: #111116 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #f8fafc !important;
   border-radius: 6px !important;
+  padding: 6px 10px !important;
 }
 
 html.dark input[type="text"]:focus,
 html.dark input[type="password"]:focus,
 html.dark textarea:focus,
 html.dark select:focus {
-  border-color: #6366f1 !important;
+  border-color: #60a5fa !important;
   outline: none !important;
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3) !important;
-}
-
-/* ボタン */
-html.dark button:not(#plasmo-shadow-container *),
-html.dark .btn,
-html.dark .btn-txt,
-html.dark .under-btn,
-html.dark .btn-color,
-html.dark .fileSelectButton {
-  background-color: #2d2d3a !important;
-  border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  color: #ffffff !important;
-  border-radius: 6px !important;
-  transition: all 0.15s ease !important;
-}
-
-html.dark button:not(#plasmo-shadow-container *):hover,
-html.dark .btn:hover,
-html.dark .under-btn:hover,
-html.dark .fileSelectButton:hover {
-  background-color: #3b3b4d !important;
-  border-color: rgba(255, 255, 255, 0.25) !important;
-}
-
-/* リンク */
-html.dark .link-txt,
-html.dark a.course-info-txt,
-html.dark .downloadFile,
-html.dark a:not(.btn):not(.sidemenu-link):not(.page-head-navi-colomn):not(#plasmo-shadow-container *) {
-  color: #818cf8 !important;
-}
-
-html.dark .link-txt:hover,
-html.dark a.course-info-txt:hover,
-html.dark .downloadFile:hover {
-  color: #a5b4fc !important;
-  text-decoration: underline !important;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.25) !important;
 }
 
 /* ドラッグ＆ドロップエリア */
 html.dark .drag-drop-area,
 html.dark #fileDadArea {
-  background-color: #15151c !important;
-  border: 2px dashed rgba(255, 255, 255, 0.22) !important;
-  color: #a1a1aa !important;
+  background-color: #13131a !important;
+  border: 2px dashed rgba(255, 255, 255, 0.25) !important;
+  color: #94a3b8 !important;
   border-radius: 8px !important;
+  padding: 20px !important;
 }
 
 /* ==========================================================================
@@ -230,8 +373,8 @@ html.dark #fileDadArea {
    ========================================================================== */
 html.dark .ql-container.ql-snow,
 html.dark .ql-snow .ql-editor {
-  background-color: #16161c !important;
-  color: #f4f4f5 !important;
+  background-color: #121217 !important;
+  color: #f1f5f9 !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
@@ -253,25 +396,28 @@ html.dark .ql-editor div[style*="color: rgb(0, 0, 0)"] {
 }
 
 /* ==========================================================================
-   テーブル・リスト要素
+   テーブル・成果物一覧リスト
    ========================================================================== */
 html.dark table {
-  background-color: #1c1c23 !important;
+  background-color: #17171f !important;
   border-color: rgba(255, 255, 255, 0.1) !important;
 }
 
 html.dark th,
-html.dark .contents-tag {
-  background-color: #252530 !important;
-  color: #ffffff !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+html.dark .contents-tag,
+html.dark .contents-list.contents-tag {
+  background-color: #22222d !important;
+  color: #f8fafc !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.12) !important;
+  padding: 10px 12px !important;
 }
 
 html.dark td,
 html.dark .result-list {
-  background-color: #1c1c23 !important;
-  color: #e4e4e7 !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
+  background-color: #17171f !important;
+  color: #f1f5f9 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  padding: 10px 12px !important;
 }
 
 /* ==========================================================================
@@ -279,20 +425,20 @@ html.dark .result-list {
    ========================================================================== */
 html.dark .ui-dialog,
 html.dark .ui-widget-content {
-  background-color: #1f1f28 !important;
-  color: #f4f4f5 !important;
+  background-color: #1c1c25 !important;
+  color: #f1f5f9 !important;
   border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7) !important;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.8) !important;
 }
 
 html.dark .ui-widget-header {
-  background-color: #262633 !important;
+  background-color: #242432 !important;
   color: #ffffff !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 html.dark .ui-dialog-buttonpane {
-  background-color: #1c1c24 !important;
+  background-color: #181820 !important;
   border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
 }
 
