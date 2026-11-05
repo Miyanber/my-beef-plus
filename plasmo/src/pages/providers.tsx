@@ -10,14 +10,26 @@ const ThemeBridge = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     const activeTheme = resolvedTheme || theme
     const container = containerRef.current
+    const isDark = activeTheme === "dark"
 
     if (container) {
-      if (activeTheme === "dark") {
+      if (isDark) {
         container.classList.add("dark")
         container.style.colorScheme = "dark" // スクロールバーなどもダーク対応させる
       } else {
         container.classList.remove("dark")
         container.style.colorScheme = "light"
+      }
+    }
+
+    // <html> タグとも完全に同期させてネイティブ側との一貫性を維持
+    if (typeof document !== "undefined") {
+      if (isDark) {
+        document.documentElement.classList.add("dark")
+        document.documentElement.style.colorScheme = "dark"
+      } else {
+        document.documentElement.classList.remove("dark")
+        document.documentElement.style.colorScheme = "light"
       }
     }
   }, [theme, resolvedTheme])
