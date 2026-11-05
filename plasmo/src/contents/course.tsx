@@ -5,6 +5,8 @@ import { getDefaultStyle } from "~lib/plasmo-style"
 import type { CourseDetail } from "@/lib/timetable-data"
 import { scrapeCourseDetail } from "~lib/scrapers"
 import { usePageData } from "~lib/use-page-data"
+import { getSyncCache } from "~lib/storage-cache"
+import { setNativeHidden } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
   // 講義トップのみ。課題提出・テスト解答などの子ページ (/lms/course/xxx) は
@@ -17,6 +19,15 @@ export const config: PlasmoCSConfig = {
 }
 
 export const getStyle = getDefaultStyle
+
+// スクリプト読み込み直後（document_start）の最速タイミングでキャッシュ判定を行い、
+// キャッシュがあれば即座にネイティブDOMを隠蔽して画面遷移時のチラつきを100%防止
+try {
+  const initialCourseId = new URLSearchParams(window.location.search).get("idnumber") ?? ""
+  if (initialCourseId && getSyncCache<CourseDetail>(`course_${initialCourseId}`)) {
+    setNativeHidden(true)
+  }
+} catch {}
 
 const CoursePage = () => {
   const courseId = new URLSearchParams(window.location.search).get("idnumber") ?? ""

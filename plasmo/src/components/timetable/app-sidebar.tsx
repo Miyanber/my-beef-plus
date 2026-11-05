@@ -13,6 +13,8 @@ import {
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useStorage } from "@plasmohq/storage/hook"
+import { useEffect, useState } from "react"
+import { getSyncSidebarOpen, setSyncSidebarOpen } from "@/lib/storage-cache"
 
 const NAV_ITEMS = [
   { label: "HOME", path: "/lms/timetable", icon: Home },
@@ -28,14 +30,30 @@ function isActivePath(path: string): boolean {
 }
 
 export function AppSidebar() {
-  // 初期値を undefined にして、ストレージ読み込み中であることを検知する
-  const [isOpen, setIsOpen] = useStorage<boolean | undefined>("isOpen", undefined) 
+  // 1. 同期ストレージ（localStorage）から前回の開閉状態を即座に取得して初期化
+  // これにより、ページ遷移直後の初回レンダリングから前回の位置・幅が100%維持される
+  const [isOpen, setIsOpenState] = useState<boolean>(getSyncSidebarOpen)
+  const [hasMounted, setHasMounted] = useState(false)
 
-  // 1. ストレージから値が返ってくるまでの「一瞬」のデフォルト値（開いた状態）
-  const isSidebarOpen = isOpen ?? true 
+  // 2. chrome.storage.local とのバックグラウンド同期
+  const [storedOpen, setStoredOpen] = useStorage<boolean>("isOpen", isOpen)
 
-  // 2. ストレージの読み込みが完了したかどうかのフラグ
-  const isReady = isOpen !== undefined
+  useEffect(() => {
+    setHasMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (storedOpen !== undefined && storedOpen !== isOpen) {
+      setIsOpenState(storedOpen)
+      setSyncSidebarOpen(storedOpen)
+    }
+  }, [storedOpen, isOpen])
+
+  const handleToggle = (next: boolean) => {
+    setIsOpenState(next)
+    setSyncSidebarOpen(next)
+    setStoredOpen(next)
+  }
 
   return (
     <>
@@ -62,23 +80,23 @@ export function AppSidebar() {
       <aside
         className={cn(
           "hidden flex-shrink-0 md:block bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border top-0",
-          // ストレージの読み込みが確定（isReady === true）するまでは、
-          // 幅が急激に変わるアニメーション（transition）を一時的にオフにしてチラつきを抹殺する
-          isReady ? "transition-all duration-300" : "transition-none",
-          isSidebarOpen ? "w-72" : "w-20 px-4"
+          // 初回描画（ページ遷移直後）はアニメーションをオフにして位置ブレやチラつきを完全防止。
+          // ユーザーの明示的な開閉クリック時のみ transition を発火させる。
+          hasMounted ? "transition-all duration-300" : "transition-none",
+          isOpen ? "w-72" : "w-20 px-4"
         )}
       >
         {/* top-7 は aside の py-7 に合わせている */}
         <div className="md:flex shrink-0 flex-col gap-8 sticky top-7 w-full">
           {/* ロゴとPC用トグルボタン */}
-          <div className={cn("flex items-center", isSidebarOpen ? "justify-between" : "justify-center")}>
-            <LogoLockup isOpen={isSidebarOpen} />
+          <div className={cn("flex items-center", isOpen ? "justify-between" : "justify-center")}>
+            <LogoLockup isOpen={isOpen} />
             
-            {isSidebarOpen && (
+            {isOpen && (
               <button
                 type="button"
                 aria-label="サイドバーを折りたたむ"
-                onClick={() => setIsOpen(false)}
+                onClick={() => handleToggle(false)}
                 className="flex size-7 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <ChevronLeft className="size-4" />
@@ -87,12 +105,12 @@ export function AppSidebar() {
           </div>
 
           {/* 閉じた状態の時の展開ボタン */}
-          {!isSidebarOpen && (
+          {!isOpen && (
             <div className="flex justify-center">
               <button
                 type="button"
                 aria-label="サイドバーを展開する"
-                onClick={() => setIsOpen(true)}
+                onClick={() => handleToggle(true)}
                 className="flex size-7 items-center justify-center rounded-full border border-sidebar-border bg-sidebar text-sidebar-foreground/60 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               >
                 <ChevronRight className="size-4" />
@@ -101,7 +119,7 @@ export function AppSidebar() {
           )}
 
           {/* PC用ナビゲーション */}
-          <Navigation isOpen={isSidebarOpen} />
+          <Navigation isOpen={isOpen} />
         </div>
       </aside>
     </>
