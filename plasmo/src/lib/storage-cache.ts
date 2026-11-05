@@ -21,6 +21,14 @@ export function getSyncCache<T>(key: string): T | undefined {
 }
 
 /**
+ * キャッシュが存在するかどうかを同期的に判定する
+ */
+export function hasSyncCache(key: string): boolean {
+  if (typeof window === "undefined" || !window.localStorage) return false;
+  return window.localStorage.getItem(CACHE_PREFIX + key) !== null;
+}
+
+/**
  * キャッシュを localStorage（同期アクセス用）と chrome.storage.local（拡張機能永続用）の両方に保存する。
  */
 export function setSyncCache<T>(key: string, data: T): void {
@@ -71,8 +79,14 @@ export function getSyncSidebarOpen(): boolean {
   if (typeof window === "undefined" || !window.localStorage) return true;
   try {
     const val = window.localStorage.getItem(SIDEBAR_KEY);
-    if (val === null) return true;
-    return val === "true";
+    if (val !== null) return val === "true";
+    // 互換性: 旧キー "isOpen" もチェック
+    const oldVal = window.localStorage.getItem("isOpen");
+    if (oldVal !== null) {
+      window.localStorage.setItem(SIDEBAR_KEY, oldVal);
+      return oldVal === "true";
+    }
+    return true;
   } catch {
     return true;
   }
@@ -85,7 +99,9 @@ export function setSyncSidebarOpen(isOpen: boolean): void {
   if (typeof window !== "undefined" && window.localStorage) {
     try {
       window.localStorage.setItem(SIDEBAR_KEY, String(isOpen));
+      window.localStorage.setItem("isOpen", String(isOpen));
     } catch {}
   }
   localArea.set("isOpen", isOpen).catch(() => {});
+  localArea.set(SIDEBAR_KEY, isOpen).catch(() => {});
 }
