@@ -9,6 +9,8 @@ import { DefaultLayout } from "~pages/layout"
 import type { TimetableStore } from "@/lib/timetable-data"
 import { scrapeTimetable } from "~lib/scrapers"
 import { usePageData } from "~lib/use-page-data"
+import { getSyncCache } from "~lib/storage-cache"
+import { setNativeHidden } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
   matches: ["https://beefplus.center.kobe-u.ac.jp/lms/timetable*"],
@@ -27,6 +29,15 @@ function isCacheForCurrentUrl(cached: TimetableStore): boolean {
   const term = params.get("kikanCd")
   return (!year || year === cached.year) && (term === null || term === cached.termCode)
 }
+
+// スクリプト読み込み直後（document_start）の最速タイミングでキャッシュ判定を行い、
+// キャッシュがあれば即座にネイティブDOMを隠蔽して画面遷移時のチラつきを100%防止
+try {
+  const initialCache = getSyncCache<TimetableStore>("timetableStore")
+  if (initialCache && isCacheForCurrentUrl(initialCache)) {
+    setNativeHidden(true)
+  }
+} catch {}
 
 // メインのコンポーネント
 const TimetablePage = () => {
