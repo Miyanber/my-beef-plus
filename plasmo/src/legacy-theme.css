@@ -177,7 +177,7 @@ html.dark .sidemenu-list-txt {
    コースヘッダー・タイトル・カードブロック
    ========================================================================== */
 
-/* コースタイトル（「2026 後期 3X003 データ解析」を明るいライトブルーにして超見やすく） */
+/* コースタイトル（「2026 後期 3X017 演習2」等を明るいライトブルーにして超見やすく） */
 html.dark .course-title-txt,
 html.dark .course-title-txt a,
 html.dark .course-info-txt,
@@ -217,8 +217,7 @@ html.dark .contents-title-txt {
 }
 
 html.dark .block-title,
-html.dark .block-wide,
-html.dark .report-color {
+html.dark .block-wide {
   background-color: #22222d !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 7px 7px 0 0 !important;
@@ -275,6 +274,42 @@ html.dark .contents-answer-area {
   line-height: 1.6 !important;
 }
 
+/* 赤文字の注意書き（※編集後は〜、アップロード可能ファイル数など）を明るく読みやすく */
+html.dark .highlight-txt,
+html.dark .error-txt,
+html.dark .alert-txt,
+html.dark [style*="color: red"],
+html.dark [style*="color:red"],
+html.dark [style*="color: rgb(255, 0, 0)"] {
+  color: #f87171 !important;
+}
+
+/* ==========================================================================
+   成果物提出エリアの赤帯（サーモンピンク）のダーク調和
+   ========================================================================== */
+html.dark .report-submission-file-title-header-area,
+html.dark .report-submission-file-title-header-area.report-color,
+html.dark .report-color {
+  background-color: #2b1f24 !important;
+  color: #fca5a5 !important;
+  border: 1px solid rgba(248, 113, 113, 0.25) !important;
+}
+
+html.dark .report-submission-file-title-header-area .bold-txt {
+  color: #fecaca !important;
+}
+
+html.dark .submissionArea,
+html.dark .submissionContentsArea,
+html.dark .report-submission-area {
+  background-color: #171720 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .fileSelectName {
+  color: #cbd5e1 !important;
+}
+
 /* ==========================================================================
    リンク・ダウンロードファイル
    ========================================================================== */
@@ -295,37 +330,50 @@ html.dark a.link-txt:hover {
 }
 
 /* ==========================================================================
-   ボタンのコントラスト改善（「保存せずに前の画面に戻る」が読めない問題を解消）
+   ボタンのコントラスト改善（「保存せずに前の画面に戻る」「確認画面に進む」等）
    ========================================================================== */
 html.dark .under-btn,
 html.dark .btn-txt,
 html.dark .btn-color,
 html.dark a.under-btn,
+html.dark #report_submission_btn,
 html.dark .course_on_report_submission,
 html.dark button:not(#plasmo-shadow-container *),
 html.dark .btn,
 html.dark .fileSelectButton {
   background-color: #2a2a38 !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   color: #ffffff !important; /* 文字色は絶対に白！ */
   border-radius: 6px !important;
   font-weight: 500 !important;
   padding: 8px 18px !important;
   display: inline-block !important;
   text-decoration: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
   transition: all 0.15s ease !important;
+  cursor: pointer !important;
 }
 
 html.dark .under-btn:hover,
 html.dark a.under-btn:hover,
+html.dark #report_submission_btn:hover,
 html.dark button:not(#plasmo-shadow-container *):hover,
 html.dark .btn:hover,
 html.dark .fileSelectButton:hover {
   background-color: #3b3b4f !important;
-  border-color: rgba(255, 255, 255, 0.3) !important;
+  border-color: rgba(255, 255, 255, 0.35) !important;
   color: #ffffff !important;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 確認画面に進むボタン（メインアクション）は少し目立たせる */
+html.dark #report_submission_btn {
+  background-color: #312e81 !important;
+  border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+html.dark #report_submission_btn:hover {
+  background-color: #4338ca !important;
 }
 
 /* フッターボタンエリア */
@@ -418,6 +466,40 @@ html.dark .result-list {
   color: #f1f5f9 !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
   padding: 10px 12px !important;
+}
+
+/* ==========================================================================
+   フッター・ダイレクトリンク・Topボタン
+   ========================================================================== */
+html.dark #page_foot,
+html.dark .page-foot,
+html.dark .page-foot-contents {
+  background-color: #121217 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+html.dark .page-foot-logo img {
+  filter: brightness(0.95) contrast(1.1) !important;
+}
+
+html.dark .page-directlink {
+  background-color: #17171e !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 6px !important;
+  padding: 10px 14px !important;
+  margin: 16px 0 !important;
+}
+
+html.dark .page-directlink-txt {
+  color: #94a3b8 !important;
+}
+
+html.dark .page-top-btn {
+  background-color: #242432 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 /* ==========================================================================
