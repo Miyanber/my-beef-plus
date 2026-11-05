@@ -12,9 +12,13 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { useStorage } from "@plasmohq/storage/hook"
 import { useEffect, useState } from "react"
-import { getSyncSidebarOpen, setSyncSidebarOpen } from "@/lib/storage-cache"
+import {
+  getDefaultSidebarOpen,
+  getSyncSidebarOpen,
+  hasUserSidebarOverride,
+  setSyncSidebarOpen
+} from "@/lib/storage-cache"
 import { onRouteChanged } from "@/lib/router"
 
 const NAV_ITEMS = [
@@ -30,29 +34,48 @@ function checkActivePath(path: string, currentPath: string): boolean {
 }
 
 export function AppSidebar() {
-  // 1. 同期ストレージ（localStorage）から前回の開閉状態を即座に取得して初期化
-  // これにより、初回レンダリングから前回の位置・幅が100%維持される
+  // 1. 同期ストレージ（localStorage）または画面幅判定から初期状態を即座に取得して初期化
+  // これにより、初回レンダリングから最適な位置・幅が100%維持される
   const [isOpen, setIsOpenState] = useState<boolean>(getSyncSidebarOpen)
-  const [hasMounted, setHasMounted] = useState(false)
+  // ユーザーが明示的にトグルボタンをクリックした時のみ transition を有効化する
+  // ページ遷移時やリサイズ時は false のまま（transition-none）なので、開閉アニメーションのチラつきを完全根絶
+  const [isUserToggled, setIsUserToggled] = useState(false)
   const [currentPath, setCurrentPath] = useState(() => (typeof window !== "undefined" ? window.location.pathname : ""))
 
-  // 2. chrome.storage.local とのバックグラウンド同期
-  const [, setStoredOpen] = useStorage<boolean>("isOpen", isOpen)
-
   useEffect(() => {
-    setHasMounted(true)
+    // 画面リサイズ時に、ユーザーが手動で設定を固定していない場合は画面幅にレスポンシブ追従
+    const handleResize = () => {
+      if (!hasUserSidebarOverride()) {
+        const nextDefault = getDefaultSidebarOpen()
+        setIsOpenState((prev) => {
+          if (prev !== nextDefault) {
+            setIsUserToggled(false) // リサイズ時は transition-none でチラつきなく瞬時に追従
+            return nextDefault
+          }
+          return prev
+        })
+      }
+    }
+
+    window.addEventListener("resize", handleResize)
+
     // SPAナビゲーション時にアクティブパスを即時追従させる
-    return onRouteChanged((route) => {
+    const unbindRoute = onRouteChanged((route) => {
       if (route.type !== "native") {
         setCurrentPath(route.pathname)
       }
     })
+
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      unbindRoute()
+    }
   }, [])
 
   const handleToggle = (next: boolean) => {
+    setIsUserToggled(true)
     setIsOpenState(next)
     setSyncSidebarOpen(next)
-    setStoredOpen(next)
   }
 
   return (
@@ -80,9 +103,9 @@ export function AppSidebar() {
       <aside
         className={cn(
           "hidden flex-shrink-0 md:block bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border top-0",
-          // 初回描画（ページ遷移直後）はアニメーションをオフにして位置ブレやチラつきを完全防止。
+          // 初回描画（ページ遷移直後）や画面リサイズ時はアニメーションをオフにして位置ブレやチラつきを完全防止。
           // ユーザーの明示的な開閉クリック時のみ transition を発火させる。
-          hasMounted ? "transition-all duration-300" : "transition-none",
+          isUserToggled ? "transition-all duration-300" : "transition-none",
           isOpen ? "w-72" : "w-20 px-4"
         )}
       >
