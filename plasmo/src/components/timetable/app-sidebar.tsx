@@ -15,6 +15,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useStorage } from "@plasmohq/storage/hook"
 import { useEffect, useState } from "react"
 import { getSyncSidebarOpen, setSyncSidebarOpen } from "@/lib/storage-cache"
+import { onRouteChanged } from "@/lib/router"
 
 const NAV_ITEMS = [
   { label: "HOME", path: "/lms/timetable", icon: Home },
@@ -24,30 +25,29 @@ const NAV_ITEMS = [
   { label: "BEEF+ Venture", path: "https://ventureplus.center.kobe-u.ac.jp/login", icon: Sparkles },
 ]
 
-function isActivePath(path: string): boolean {
-  const current = window.location.pathname
-  return current === path || current.startsWith(path + "/")
+function checkActivePath(path: string, currentPath: string): boolean {
+  return currentPath === path || currentPath.startsWith(path + "/")
 }
 
 export function AppSidebar() {
   // 1. 同期ストレージ（localStorage）から前回の開閉状態を即座に取得して初期化
-  // これにより、ページ遷移直後の初回レンダリングから前回の位置・幅が100%維持される
+  // これにより、初回レンダリングから前回の位置・幅が100%維持される
   const [isOpen, setIsOpenState] = useState<boolean>(getSyncSidebarOpen)
   const [hasMounted, setHasMounted] = useState(false)
+  const [currentPath, setCurrentPath] = useState(() => (typeof window !== "undefined" ? window.location.pathname : ""))
 
   // 2. chrome.storage.local とのバックグラウンド同期
-  const [storedOpen, setStoredOpen] = useStorage<boolean>("isOpen", isOpen)
+  const [, setStoredOpen] = useStorage<boolean>("isOpen", isOpen)
 
   useEffect(() => {
     setHasMounted(true)
+    // SPAナビゲーション時にアクティブパスを即時追従させる
+    return onRouteChanged((route) => {
+      if (route.type !== "native") {
+        setCurrentPath(route.pathname)
+      }
+    })
   }, [])
-
-  useEffect(() => {
-    if (storedOpen !== undefined && storedOpen !== isOpen) {
-      setIsOpenState(storedOpen)
-      setSyncSidebarOpen(storedOpen)
-    }
-  }, [storedOpen, isOpen])
 
   const handleToggle = (next: boolean) => {
     setIsOpenState(next)
@@ -69,7 +69,7 @@ export function AppSidebar() {
           <SheetContent side="left" className="w-72 bg-sidebar p-0 text-sidebar-foreground border-sidebar-border">
             <div className="flex flex-col gap-8 px-5 py-7">
               <LogoLockup isOpen={true} />
-              <Navigation isOpen={true} />
+              <Navigation isOpen={true} currentPath={currentPath} />
             </div>
           </SheetContent>
         </Sheet>
@@ -119,7 +119,7 @@ export function AppSidebar() {
           )}
 
           {/* PC用ナビゲーション */}
-          <Navigation isOpen={isOpen} />
+          <Navigation isOpen={isOpen} currentPath={currentPath} />
         </div>
       </aside>
     </>
@@ -149,11 +149,11 @@ function LogoLockup({ isOpen }: { isOpen: boolean }) {
   )
 }
 
-function Navigation({ isOpen }: { isOpen: boolean }) {
+function Navigation({ isOpen, currentPath }: { isOpen: boolean; currentPath: string }) {
   return (
     <nav className="flex flex-col gap-1.5" aria-label="メインナビゲーション">
       {NAV_ITEMS.map(({ label, icon: Icon, path }) => {
-        const active = isActivePath(path);
+        const active = checkActivePath(path, currentPath);
         return (
           <a
             key={label}
