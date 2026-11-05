@@ -3,6 +3,32 @@ import { Storage } from "@plasmohq/storage";
 const localArea = new Storage({ area: "local" });
 const CACHE_PREFIX = "my_beef_cache_";
 const SIDEBAR_KEY = "my_beef_sidebar_open";
+const SIDEBAR_OVERRIDE_KEY = "my_beef_sidebar_user_override";
+
+/**
+ * サイドバー自動開閉の判定基準となるブレークポイント (px)。
+ * - Surface Pro 12インチ（CSS幅 最大約1464px）以下: デフォルト折り畳み (false)
+ * - 一般的な15.6インチ以上のPC（FHD 125%拡大時 CSS幅 約1536px、100%時 1920px）以上: デフォルト展開 (true)
+ */
+export const SIDEBAR_BREAKPOINT = 1500;
+
+/**
+ * 画面幅に基づくデフォルトの開閉状態を判定する。
+ * Surface Pro 12インチ以下 (< 1500px) は折り畳み (false)、
+ * 15.6インチ以上 (>= 1500px) は展開 (true)。
+ */
+export function getDefaultSidebarOpen(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.innerWidth >= SIDEBAR_BREAKPOINT;
+}
+
+/**
+ * ユーザーが手動でサイドバーの開閉を明示的に切り替えたことがあるかを判定する。
+ */
+export function hasUserSidebarOverride(): boolean {
+  if (typeof window === "undefined" || !window.localStorage) return false;
+  return window.localStorage.getItem(SIDEBAR_OVERRIDE_KEY) === "true";
+}
 
 /**
  * localStorage から同期的にキャッシュを取得する。
@@ -73,35 +99,42 @@ function purgeOldCaches(): void {
 
 /**
  * サイドバーの開閉状態を同期的に取得する。
- * 未保存時のデフォルトは true（開いた状態）。
+ * 1. ユーザーが明示的に手動で開閉を切り替えている場合はその設定値を最優先する。
+ * 2. 未変更（デフォルト）の場合は画面幅に応じた初期状態（Surface Pro 12インチ以下は折り畳み、15.6インチ以上は展開）を返す。
  */
 export function getSyncSidebarOpen(): boolean {
-  if (typeof window === "undefined" || !window.localStorage) return true;
+  if (typeof window === "undefined" || !window.localStorage) {
+    return getDefaultSidebarOpen();
+  }
   try {
-    const val = window.localStorage.getItem(SIDEBAR_KEY);
-    if (val !== null) return val === "true";
-    // 互換性: 旧キー "isOpen" もチェック
-    const oldVal = window.localStorage.getItem("isOpen");
-    if (oldVal !== null) {
-      window.localStorage.setItem(SIDEBAR_KEY, oldVal);
-      return oldVal === "true";
+    if (hasUserSidebarOverride()) {
+      const val = window.localStorage.getItem(SIDEBAR_KEY);
+      if (val !== null) return val === "true";
+      // 互換性: 旧キー "isOpen" もチェック
+      const oldVal = window.localStorage.getItem("isOpen");
+      if (oldVal !== null) {
+        window.localStorage.setItem(SIDEBAR_KEY, oldVal);
+        return oldVal === "true";
+      }
     }
-    return true;
+    return getDefaultSidebarOpen();
   } catch {
-    return true;
+    return getDefaultSidebarOpen();
   }
 }
 
 /**
- * サイドバーの開閉状態を同期保存し、chrome.storage.local にも保存する。
+ * サイドバーの開閉状態をユーザー設定として同期保存し、chrome.storage.local にも保存する。
  */
 export function setSyncSidebarOpen(isOpen: boolean): void {
   if (typeof window !== "undefined" && window.localStorage) {
     try {
+      window.localStorage.setItem(SIDEBAR_OVERRIDE_KEY, "true");
       window.localStorage.setItem(SIDEBAR_KEY, String(isOpen));
       window.localStorage.setItem("isOpen", String(isOpen));
     } catch {}
   }
   localArea.set("isOpen", isOpen).catch(() => {});
   localArea.set(SIDEBAR_KEY, isOpen).catch(() => {});
+  localArea.set(SIDEBAR_OVERRIDE_KEY, true).catch(() => {});
 }
