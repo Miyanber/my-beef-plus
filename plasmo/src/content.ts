@@ -46,18 +46,20 @@ function applyTheme(isDark: boolean): void {
  * ネイティブ画面用ダークテーマCSSをDOMに即座に注入する
  */
 function injectLegacyThemeStyle(): void {
-  if (document.getElementById(LEGACY_STYLE_ID)) return
-  const style = document.createElement("style")
-  style.id = LEGACY_STYLE_ID
-  style.textContent = legacyThemeCss
-  const target = document.head || document.documentElement
-  if (target) {
-    target.appendChild(style)
-  } else {
-    document.addEventListener("DOMContentLoaded", () => {
-      (document.head || document.documentElement).appendChild(style)
-    }, { once: true })
+  let style = document.getElementById(LEGACY_STYLE_ID) as HTMLStyleElement | null
+  if (!style) {
+    style = document.createElement("style")
+    style.id = LEGACY_STYLE_ID
+    const target = document.head || document.documentElement
+    if (target) {
+      target.appendChild(style)
+    } else {
+      document.addEventListener("DOMContentLoaded", () => {
+        (document.head || document.documentElement).appendChild(style!)
+      }, { once: true })
+    }
   }
+  style.textContent = legacyThemeCss
 }
 
 // 1. document_start 直後に 0ms でテーマを判定・適用（白飛び/FOUCを完全根絶）
