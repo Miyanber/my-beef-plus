@@ -3,6 +3,7 @@ import { Moon, Sun } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Storage } from "@plasmohq/storage"
 import { getDefaultStyle } from "~lib/plasmo-style"
+import { onRouteChanged, parseRoute } from "~lib/router"
 
 const localArea = new Storage({ area: "local" })
 
@@ -17,28 +18,12 @@ export const config: PlasmoCSConfig = {
 export const getStyle = getDefaultStyle
 
 /**
- * 独自UI（時間割・課題一覧・講義トップ）が提供されている画面かを判定する
+ * 現在のページが独自UI対象のルート（時間割・課題一覧・講義トップ）かを判定する
  */
 function isModernUiPage(): boolean {
   if (typeof window === "undefined") return false
-  const path = window.location.pathname
-
-  // 1. 時間割または課題一覧
-  if (path.startsWith("/lms/timetable") || path.startsWith("/lms/task")) {
-    return true
-  }
-
-  // 2. 講義トップ画面 (/lms/course?idnumber=... 等。ただし /lms/course/report/... 等の子パスは対象外)
-  if (path === "/lms/course") {
-    return true
-  }
-
-  // 3. 独自UIによりネイティブDOMが画面外に退避されている場合
-  if (document.getElementById("my-beef-plus-hide-native")) {
-    return true
-  }
-
-  return false
+  const route = parseRoute(window.location.href)
+  return route.type !== "native"
 }
 
 /**
@@ -79,7 +64,13 @@ const LegacyThemeToggle = () => {
     window.addEventListener("beef-plus-theme-change", handleThemeChange)
     window.addEventListener("storage", handleStorage)
 
-    // MutationObserver でネイティブDOM隠蔽状態の変化を監視
+    // SPAルーティング変更リスナー
+    const cleanupRoute = onRouteChanged(() => {
+      setIsModern(isModernUiPage())
+      setIsDark(checkIsDark())
+    })
+
+    // MutationObserver でネイティブDOM隠蔽やURL変化を監視
     const observer = new MutationObserver(() => {
       setIsModern(isModernUiPage())
     })
@@ -91,6 +82,7 @@ const LegacyThemeToggle = () => {
     return () => {
       window.removeEventListener("beef-plus-theme-change", handleThemeChange)
       window.removeEventListener("storage", handleStorage)
+      cleanupRoute()
       observer.disconnect()
     }
   }, [])
