@@ -1,4 +1,4 @@
-import { parseCourseDetail, parseTasks, parseTimetable } from "./parsers";
+import { parseCourseDetail, parseGlobalChrome, parseTasks, parseTimetable } from "./parsers";
 import { getSyncCache, setSyncCache } from "./storage-cache";
 import type { CourseDetail, TaskStore, TimetableStore } from "./timetable-data";
 import { setNativeHidden } from "./utils";
@@ -111,6 +111,11 @@ export function getRouteCacheKey(route: CustomRoute): string {
 
 let isRevalidating = false;
 let revalidateController: AbortController | null = null;
+let spaNavigated = false;
+
+export function hasSpaNavigated(): boolean {
+  return spaNavigated;
+}
 
 /**
  * バックグラウンドで対象ページの最新HTMLをfetchし、スクレイピングしてキャッシュ＆UIを更新。
@@ -159,6 +164,12 @@ export async function revalidatePage(targetUrl: string, route: CustomRoute): Pro
       setSyncCache(key, data);
       notifyDataUpdated(key, data);
     }
+
+    const chrome = parseGlobalChrome(doc);
+    if (chrome.userName || chrome.infos.length > 0 || chrome.updates.length > 0) {
+      setSyncCache("globalChrome", chrome);
+      notifyDataUpdated("globalChrome", chrome);
+    }
   } catch (err: any) {
     if (err?.name !== "AbortError") {
       console.warn("[my-beef-plus] revalidate failed for:", targetUrl, err);
@@ -183,6 +194,8 @@ export function navigateTo(url: string, replace = false): void {
   }
 
   // 独自UI画面への遷移:
+  spaNavigated = true;
+
   // 1. URL を即座に更新
   if (replace) {
     window.history.replaceState(null, "", url);
@@ -245,6 +258,7 @@ export function setupGlobalLinkInterceptor(): () => void {
   const handlePopState = () => {
     const currentRoute = parseRoute(window.location.href);
     if (currentRoute.type !== "native") {
+      spaNavigated = true;
       setNativeHidden(true);
       routeListeners.forEach((fn) => fn(currentRoute));
       revalidatePage(window.location.href, currentRoute);

@@ -17,11 +17,10 @@ import {
   norm,
   queryParam,
   readEditor,
+  readQuillScript,
   safeHref,
   splitPeriod,
   textOf,
-  sanitizeHtml,
-  isBlankEditor,
 } from "./dom";
 
 // ---------------------------------------------------------------------------
@@ -157,8 +156,13 @@ function parseMaterials(root: ParentNode, doc: Document): LectureMaterial[] {
       const attachment = parseAttachment(child);
       if (attachment) current.attachments.push(attachment);
     } else if (child.classList.contains("course-material-edit-comment")) {
-      const editor = child.querySelector(".ql-editor");
-      if (editor && !isBlankEditor(editor)) current.description = sanitizeHtml(editor.innerHTML, doc);
+      const editorEl = child.querySelector('[id^="materialContentsBodyEditor"]');
+      const indexMatch = editorEl?.id.match(/materialContentsBodyEditor(\d+)/);
+      const scriptTarget = indexMatch ? `materialContents_${indexMatch[1]}` : undefined;
+      const content =
+        readEditor(child, doc, scriptTarget, child) ??
+        (scriptTarget ? readQuillScript(doc, doc, scriptTarget) : null);
+      if (content) current.description = content.html;
     } else if (textOf(child.querySelector(".contents-header-txt .bold-txt")) === "公開期間") {
       current.publicationPeriod = splitPeriod(textOf(child.querySelector(".contents-input-area span")));
     }
@@ -279,8 +283,8 @@ function parseMessages(root: ParentNode): Message[] {
  * Quillエディタの描画完了待ちは呼び出し側 (scrapers) の責務。
  */
 export function parseCourseDetail(doc: Document, id: string): CourseDetail {
-  const summary = readEditor(doc.querySelector("#bodyEditor"), doc);
-  const online = readEditor(doc.querySelector("#onlineBodyEditor"), doc);
+  const summary = readEditor(doc.querySelector("#bodyEditor"), doc, "courseContents", doc);
+  const online = readEditor(doc.querySelector("#onlineBodyEditor"), doc, "onlineContents", doc);
 
   return {
     id,

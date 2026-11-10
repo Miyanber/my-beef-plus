@@ -2,7 +2,7 @@
  * BEEF+ 本来の（非表示にしている）DOMを操作するブリッジ。
  * 自前UIから「ネイティブの機能」を呼び出したいときに使う。
  */
-import { sanitizeHtml } from "./parsers/dom";
+import { parseQuillScriptText, sanitizeHtml } from "./parsers/dom";
 import type { AnnouncementDetail } from "./timetable-data";
 
 /** 時間割の年度・期間セレクトを書き換えて、BEEF+ のフォームを送信する */
@@ -35,26 +35,7 @@ function runInMainWorld(code: string): void {
 
 /** Quill の setJsonData 引数から Delta JSON 文字列を安全に抽出して HTML に変換する */
 function extractBodyFromScript(scriptText: string): string | null {
-  // setJsonData( の直後にある文字列リテラルをキャプチャ
-  const match = scriptText.match(/setJsonData\(\s*"((?:[^"\\]|\\.)*)"/);
-  if (!match) return null;
-
-  try {
-    const unescaped = JSON.parse(`"${match[1]}"`);
-    const delta = typeof unescaped === "string" ? JSON.parse(unescaped) : unescaped;
-    if (Array.isArray(delta?.ops)) {
-      const text = delta.ops.map((op: { insert?: string }) => op.insert || "").join("");
-      if (text.trim()) {
-        return text
-          .split("\n")
-          .map((line: string) => `<p>${line || "<br>"}</p>`)
-          .join("");
-      }
-    }
-  } catch {
-    // パース失敗時は null
-  }
-  return null;
+  return parseQuillScriptText(scriptText, document)?.html ?? null;
 }
 
 /**
