@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { MessageSquare, Bell, ExternalLink } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -48,37 +48,46 @@ function NoticeMenu({
   const [align, setAlign] = useState<"left" | "right">("right")
   const unread = notices.filter((n) => n.isNew).length
 
-  // 画面幅やサイドバー位置に応じて、ドロップダウンメニューの展開方向（左向き or 右向き）を自動算出
-  useEffect(() => {
-    if (!isOpen || !rootRef.current) return
+  // 画面幅やサイドバー位置に応じて、ドロップダウンメニューの展開方向（左向き or 右向き）を算出
+  const computeAlign = useCallback((): "left" | "right" => {
+    if (!rootRef.current) return "right"
+    const rect = rootRef.current.getBoundingClientRect()
+    const header = rootRef.current.closest("header")
+    const headerLeft = header ? header.getBoundingClientRect().left : 0
+    const headerRight = header ? header.getBoundingClientRect().right : window.innerWidth
 
-    const updateAlign = () => {
-      if (!rootRef.current) return
-      const rect = rootRef.current.getBoundingClientRect()
-      const header = rootRef.current.closest("header")
-      const headerLeft = header ? header.getBoundingClientRect().left : 0
-      const headerRight = header ? header.getBoundingClientRect().right : window.innerWidth
+    const menuWidth = 320 // w-80 = 320px
+    const spaceLeft = rect.right - headerLeft // ボタン右端からヘッダー左端（サイドバー境界）までの余白
+    const spaceRight = headerRight - rect.left // ボタン左端からヘッダー右端までの余白
 
-      const menuWidth = 320 // w-80 = 320px
-      const spaceLeft = rect.right - headerLeft // ボタン右端からヘッダー左端（サイドバー境界）までの余白
-      const spaceRight = headerRight - rect.left // ボタン左端からヘッダー右端までの余白
-
-      // 1. 左側が狭くサイドバーに被るが、右側に十分なスペースがある場合は右向きに展開 (left-0)
-      // 2. 右側が狭く、左側に十分なスペースがある場合は左向きに展開 (right-0)
-      // 3. どちらにも収まるか両方狭い場合は、より余白が広い方を選択
-      if (spaceLeft < menuWidth && spaceRight >= menuWidth) {
-        setAlign("left")
-      } else if (spaceRight < menuWidth && spaceLeft >= menuWidth) {
-        setAlign("right")
-      } else {
-        setAlign(spaceRight > spaceLeft ? "left" : "right")
-      }
+    // 1. 左側が狭くサイドバーに被るが、右側に十分なスペースがある場合は右向きに展開 (left-0)
+    // 2. 右側が狭く、左側に十分なスペースがある場合は左向きに展開 (right-0)
+    // 3. どちらにも収まるか両方狭い場合は、より余白が広い方を選択
+    if (spaceLeft < menuWidth && spaceRight >= menuWidth) {
+      return "left"
+    } else if (spaceRight < menuWidth && spaceLeft >= menuWidth) {
+      return "right"
+    } else {
+      return spaceRight > spaceLeft ? "left" : "right"
     }
+  }, [])
 
+  // 開くボタンクリック時点で同期的に最新の align を計算してセットし、マウント時のチラつきを完全根絶
+  const handleButtonClick = () => {
+    if (!isOpen) {
+      setAlign(computeAlign())
+    }
+    onToggle()
+  }
+
+  // 画面描画前（LayoutEffect）およびリサイズ時にも最新の向きを追従
+  useLayoutEffect(() => {
+    if (!isOpen) return
+    const updateAlign = () => setAlign(computeAlign())
     updateAlign()
     window.addEventListener("resize", updateAlign)
     return () => window.removeEventListener("resize", updateAlign)
-  }, [isOpen])
+  }, [isOpen, computeAlign])
 
   // メニュー外のクリック / Escape で閉じる (Shadow DOM 内なので composedPath を使う)
   useEffect(() => {
@@ -101,7 +110,7 @@ function NoticeMenu({
         type="button"
         aria-label={label}
         aria-expanded={isOpen}
-        onClick={onToggle}
+        onClick={handleButtonClick}
         className="relative flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         {icon}
@@ -115,7 +124,7 @@ function NoticeMenu({
       {isOpen && (
         <div
           className={cn(
-            "absolute top-11 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl transition-all",
+            "absolute top-11 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl",
             align === "left" ? "left-0" : "right-0"
           )}
         >
