@@ -89,17 +89,226 @@ export function isBlankEditor(editor: Element | null | undefined): boolean {
   return !norm(editor.textContent) && !editor.querySelector("img,video,a");
 }
 
+interface QuillOpAttributes {
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  strike?: boolean;
+  code?: boolean;
+  script?: "sub" | "super";
+  link?: string;
+  header?: number;
+  list?: "ordered" | "bullet";
+  blockquote?: boolean;
+  "code-block"?: boolean;
+  [key: string]: unknown;
+}
+
+interface QuillOp {
+  insert?: string | { formula?: string; image?: string };
+  attributes?: QuillOpAttributes;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function formatInlineOp(html: string, attrs?: QuillOpAttributes): string {
+  if (!attrs || !html) return html;
+  let out = html;
+  if (attrs.code) out = `<code>${out}</code>`;
+  if (attrs.script === "sub") out = `<sub>${out}</sub>`;
+  else if (attrs.script === "super") out = `<sup>${out}</sup>`;
+  if (attrs.strike) out = `<s>${out}</s>`;
+  if (attrs.underline) out = `<u>${out}</u>`;
+  if (attrs.italic) out = `<em>${out}</em>`;
+  if (attrs.bold) out = `<strong>${out}</strong>`;
+  if (typeof attrs.link === "string" && attrs.link && !/^\s*(javascript|data|vbscript):/i.test(attrs.link)) {
+    // BEEF+ の埋め込みリンク（数字のみ）は平文のままにする
+    if (!/^\d+$/.test(attrs.link)) {
+      out = `<a href="${escapeHtml(attrs.link)}" target="_blank" rel="noopener noreferrer">${out}</a>`;
+    }
+  }
+  return out;
+}
+
+/**
+ * Quill Delta ({ ops: [...] }) を HTML とプレーンテキストに変換する。
+ * DOMParser (SPA遷移時) や Quill の初期化完了前でも、`<script>` 内の `setJsonData` から
+ * コース概要・授業情報・教材コメント等を確実に復元できるようにする。
+ */
+export function parseQuillDeltaToHtml(
+  delta: unknown,
+  doc: Document,
+): { text: string; html: string } | null {
+  const ops = (delta as { ops?: QuillOp[] } | null | undefined)?.ops;
+  if (!Array.isArray(ops) || ops.length === 0) return null;
+
+  interface LineEntry {
+    html: string;
+    text: string;
+    attrs?: QuillOpAttributes;
+  }
+
+  const lines: LineEntry[] = [];
+  let currentHtml = "";
+  let currentText = "";
+  let hasMedia = false;
+
+  for (const op of ops) {
+    if (!op || op.insert == null) continue;
+
+    if (typeof op.insert === "string") {
+      const segments = op.insert.split("\n");
+      for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i];
+        if (seg.length > 0) {
+          currentHtml += formatInlineOp(escapeHtml(seg), op.attributes);
+          currentText += seg;
+        }
+        if (i < segments.length - 1) {
+          lines.push({ html: currentHtml, text: currentText, attrs: op.attributes });
+          currentHtml = "";
+          currentText = "";
+        }
+      }
+    } else if (typeof op.insert === "object") {
+      if (typeof op.insert.formula === "string" && op.insert.formula) {
+        currentHtml += formatInlineOp(`<code>${escapeHtml(op.insert.formula)}</code>`, op.attributes);
+        currentText += op.insert.formula;
+      } else if (
+        typeof op.insert.image === "string" &&
+        op.insert.image &&
+        !/^\s*(javascript|vbscript):/i.test(op.insert.image)
+      ) {
+        currentHtml += `<img src="${escapeHtml(op.insert.image)}">`;
+        hasMedia = true;
+      }
+    }
+  }
+
+  if (currentHtml.length > 0 || currentText.length > 0) {
+    lines.push({ html: currentHtml, text: currentText });
+  }
+
+  // Quill Delta 末尾の空改行を除去
+  while (
+    lines.length > 0 &&
+    !norm(lines[lines.length - 1].text) &&
+    !lines[lines.length - 1].html.includes("<img")
+  ) {
+    lines.pop();
+  }
+
+  const fullText = norm(lines.map((l) => l.text).join(" "));
+  if (!fullText && !hasMedia) return null;
+
+  const out: string[] = [];
+  let openList: "ul" | "ol" | null = null;
+
+  for (const line of lines) {
+    const listType =
+      line.attrs?.list === "ordered" ? "ol" : line.attrs?.list === "bullet" ? "ul" : null;
+    if (listType !== openList) {
+      if (openList) out.push(`</${openList}>`);
+      if (listType) out.push(`<${listType}>`);
+      openList = listType;
+    }
+
+    const inner = line.html || "<br>";
+    if (listType) {
+      out.push(`<li>${inner}</li>`);
+    } else if (
+      typeof line.attrs?.header === "number" &&
+      line.attrs.header >= 1 &&
+      line.attrs.header <= 6
+    ) {
+      const h = line.attrs.header;
+      out.push(`<h${h}>${inner}</h${h}>`);
+    } else if (line.attrs?.blockquote) {
+      out.push(`<blockquote>${inner}</blockquote>`);
+    } else if (line.attrs?.["code-block"]) {
+      out.push(`<pre><code>${line.html}</code></pre>`);
+    } else {
+      out.push(`<p>${inner}</p>`);
+    }
+  }
+
+  if (openList) {
+    out.push(`</${openList}>`);
+  }
+
+  const sanitized = sanitizeHtml(out.join(""), doc);
+  if (!sanitized) return null;
+  return { text: fullText, html: sanitized };
+}
+
+/**
+ * スクリプト文字列中の `setJsonData("...")` から Quill Delta を抽出して変換する。
+ */
+export function parseQuillScriptText(
+  scriptText: string,
+  doc: Document,
+  targetName?: string,
+): { text: string; html: string } | null {
+  if (!scriptText || !scriptText.includes("setJsonData")) return null;
+
+  const pattern = targetName
+    ? new RegExp(`\\b${targetName}\\s*\\.\\s*setJsonData\\(\\s*"((?:[^"\\\\]|\\\\.)*)"`)
+    : /setJsonData\(\s*"((?:[^"\\]|\\.)*)"/;
+
+  const match = scriptText.match(pattern);
+  if (!match) return null;
+
+  try {
+    const unescaped = JSON.parse(`"${match[1]}"`);
+    const delta = typeof unescaped === "string" ? JSON.parse(unescaped) : unescaped;
+    return parseQuillDeltaToHtml(delta, doc);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 指定スコープ内の `<script>` 要素群から `_QuillUtil.<targetName>.setJsonData(...)` を探して変換する。
+ */
+export function readQuillScript(
+  root: ParentNode,
+  doc: Document,
+  targetName?: string,
+): { text: string; html: string } | null {
+  const scripts = Array.from(root.querySelectorAll("script"));
+  for (const script of scripts) {
+    const res = parseQuillScriptText(script.textContent ?? "", doc, targetName);
+    if (res) return res;
+  }
+  return null;
+}
+
 /**
  * Quillエディタから中身を取り出す。
+ * `.ql-editor` が未描画または `.ql-blank`（Quill初期化の非同期競合時や DOMParser 解析時）の場合は、
+ * `<script>` 内の `_QuillUtil.<fallbackScriptTarget>.setJsonData(...)` からフォールバック復元する。
  * 空なら null を返す。
  */
 export function readEditor(
   container: Element | null | undefined,
   doc: Document,
+  fallbackScriptTarget?: string,
+  scriptRoot?: ParentNode,
 ): { text: string; html: string } | null {
   const editor = container?.querySelector(".ql-editor");
-  if (!editor || isBlankEditor(editor)) return null;
-  return { text: norm(editor.textContent), html: sanitizeHtml(editor.innerHTML, doc) };
+  if (editor && !isBlankEditor(editor)) {
+    return { text: norm(editor.textContent), html: sanitizeHtml(editor.innerHTML, doc) };
+  }
+  if (fallbackScriptTarget || scriptRoot) {
+    return readQuillScript(scriptRoot ?? doc, doc, fallbackScriptTarget);
+  }
+  return null;
 }
 
 /**
