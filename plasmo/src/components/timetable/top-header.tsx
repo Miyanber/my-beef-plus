@@ -80,7 +80,7 @@ function NoticeMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-11 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-lg">
+        <div className="absolute right-0 top-11 z-50 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover text-popover-foreground shadow-xl">
           <p className="border-b border-border px-4 py-2.5 text-xs font-semibold text-muted-foreground">{label}</p>
           <ul className="max-h-80 overflow-y-auto">
             {notices.length === 0 && <li className="px-4 py-6 text-center text-sm text-muted-foreground">{emptyText}</li>}
