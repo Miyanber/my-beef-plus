@@ -102,7 +102,7 @@ export function AppSidebar() {
       {/* 2. PC用：開閉可能なサイドバー（md以上で表示） */}
       <aside
         className={cn(
-          "hidden flex-shrink-0 md:block bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border top-0",
+          "relative z-10 hidden flex-shrink-0 md:block bg-sidebar px-5 py-7 text-sidebar-foreground border-r border-sidebar-border top-0",
           // 初回描画（ページ遷移直後）や画面リサイズ時はアニメーションをオフにして位置ブレやチラつきを完全防止。
           // ユーザーの明示的な開閉クリック時のみ transition を発火させる。
           isUserToggled ? "transition-all duration-300" : "transition-none",
