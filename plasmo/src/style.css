@@ -172,8 +172,43 @@
   list-style-type: disc;
 }
 
+.rich-text h1,
+.rich-text h2,
+.rich-text h3,
+.rich-text h4 {
+  font-weight: 700;
+  color: var(--foreground);
+  line-height: 1.4;
+  margin-top: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.rich-text h1:first-child,
+.rich-text h2:first-child,
+.rich-text h3:first-child,
+.rich-text h4:first-child {
+  margin-top: 0;
+}
+
+.rich-text h1 {
+  font-size: 1.15em;
+}
+
+.rich-text h2 {
+  font-size: 1.05em;
+}
+
+.rich-text h3,
+.rich-text h4 {
+  font-size: 0.95em;
+}
+
 .rich-text ol {
   list-style-type: decimal;
+}
+
+.rich-text ol > li[data-list="bullet"] {
+  list-style-type: disc;
 }
 
 .rich-text li {

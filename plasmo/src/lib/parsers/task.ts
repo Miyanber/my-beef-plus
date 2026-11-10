@@ -71,8 +71,11 @@ function parseNotices(root: ParentNode, selector: string, kind: "info" | "update
 }
 
 export function parseGlobalChrome(root: ParentNode): GlobalChrome {
+  const rawName =
+    textOf(root.querySelector(".login-view-name label")) ||
+    textOf(root.querySelector(".login-view-name")).replace(/\s*(?:履修者|担当教員|ゲスト)$/, "");
   return {
-    userName: textOf(root.querySelector(".login-view-name label")),
+    userName: norm(rawName),
     infos: parseNotices(root, "#ctrl_menu_info a.header-control-colomn", "info"),
     updates: parseNotices(root, "#ctrl_menu_notification a.header-control-colomn", "update"),
   };

@@ -1,6 +1,6 @@
 import { Storage } from "@plasmohq/storage";
 import { useEffect, useRef, useState } from "react";
-import { onDataUpdated } from "./router";
+import { hasSpaNavigated, onDataUpdated } from "./router";
 import { scrapeGlobalChrome } from "./scrapers";
 import { getSyncCache, setSyncCache } from "./storage-cache";
 import type { GlobalChrome } from "./timetable-data";
@@ -89,8 +89,9 @@ export function usePageData<T extends { lastUpdated: string }>({ key, scrape, ac
     };
   }, [key]);
 
-  // 4. 初回DOM読み込み時のスクレイピング（初回フルリロード時）
+  // 4. 初回DOM読み込み時のスクレイピング（初回フルリロード時のみ実行。SPA遷移時は revalidatePage が担当）
   useEffect(() => {
+    if (hasSpaNavigated()) return;
     let cancelled = false;
     scrapeRef
       .current()
@@ -131,6 +132,14 @@ export function useGlobalChrome(): GlobalChrome | undefined {
   const [chrome, setChrome] = useState<GlobalChrome | undefined>(() => {
     return getSyncCache<GlobalChrome>("globalChrome");
   });
+
+  useEffect(() => {
+    return onDataUpdated((updatedKey, updatedData) => {
+      if (updatedKey === "globalChrome") {
+        setChrome(updatedData as GlobalChrome);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

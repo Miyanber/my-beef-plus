@@ -12,11 +12,17 @@ const QUILL_CONTAINERS = '#bodyEditor, #onlineBodyEditor, [id^="materialContents
 async function waitForQuillEditors(): Promise<void> {
   const containers = Array.from(document.querySelectorAll(QUILL_CONTAINERS));
   await Promise.all(
-    containers.map((container) =>
-      waitForSelector(".ql-editor", { root: container, timeout: 4000 }).catch(() => {
+    containers.map(async (container) => {
+      try {
+        const editor = await waitForSelector(".ql-editor", { root: container, timeout: 4000 });
+        if (editor.classList.contains("ql-blank")) {
+          // QuillUtil インスタンス化直後は .ql-blank で、直後の $(document).ready で setJsonData が呼ばれるため少し待つ
+          await waitForSelector(".ql-editor:not(.ql-blank)", { root: container, timeout: 300 }).catch(() => {});
+        }
+      } catch {
         console.warn("[my-beef-plus] Quill editor not rendered:", container.id);
-      })
-    )
+      }
+    })
   );
 }
 
