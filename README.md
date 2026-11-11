@@ -15,10 +15,7 @@
 ```plaintext
 my-beef-plus/
 ├── plasmo/          # Chrome拡張機能本体（Plasmo + React + Tailwind CSS + shadcn/ui）
-├── next/            # Webプロトタイプ & UIコンポーネント開発環境（Next.js）
-├── samples/         # BEEF+実機から保存したサンプルHTML・アセット（パーサー開発・検証用）
-│   ├── lms/         # 時間割、講義詳細、タスクなどのHTMLサンプル
-│   └── static/      # オリジナルCSS/JS/画像アセット
+├── samples/         # BEEF+実機から保存したサンプルHTML・アセット（パーサー検証用・.gitignore対象）
 └── docs/            # 仕様書・設計書（PRD.md 等）
 ```
 
@@ -80,31 +77,9 @@ pnpm package
 4. プロジェクト内の以下のディレクトリを選択します:
    - 開発時: `my-beef-plus/plasmo/build/chrome-mv3-dev`
    - 本番確認時: `my-beef-plus/plasmo/build/chrome-mv3-prod`
-5. 拡張機能一覧に「My beef plus」が追加されれば準備完了です。
+5. 拡張機能一覧に「My BEEF+」が追加されれば準備完了です。
 
 > **Note**: コードを変更した際、マニフェストやバックグラウンド周りの変更時は拡張機能管理画面の更新アイコン（リロードボタン）をクリックして再読み込みしてください。
-
----
-
-### 3. UIプロトタイプ環境 (`next`)
-
-Next.js を用いて独立したモックUIやコンポーネントの挙動確認を行うための環境です。
-
-```bash
-cd next
-
-# 依存パッケージのインストール
-pnpm install
-
-# 開発サーバー起動
-pnpm dev
-```
-- [http://localhost:3000](http://localhost:3000) にアクセスして確認できます。
-
-#### Next.js 本番ビルド
-```bash
-pnpm build
-```
 
 ---
 
@@ -142,18 +117,14 @@ PLASMO_PUBLIC_DEBUG="True"
 
 パーサー関数（[`plasmo/src/lib/parsers/`](file:///c:/Users/Miyanber/Desktop/dev/repos/my-beef-plus/plasmo/src/lib/parsers/)）のセレクタ変更や新規パース処理を作成する際は、これらのHTMLのクラス名・DOMツリーを参照して検証してください。
 
-### 3. 型チェック & 静的解析 (Type Check & Lint)
+### 3. 型チェック (Type Check)
 
-コミットやプルリクエスト前に型エラーと構文エラーを検証します。
+コミットやプルリクエスト前に型エラーを検証します。
 
 ```bash
 # 拡張機能の TypeScript 型チェック
 cd plasmo
 pnpm tsc --noEmit
-
-# Next.js の ESLint チェック
-cd ../next
-pnpm lint
 ```
 
 ---
@@ -177,6 +148,8 @@ pnpm lint
 - **ゼロ・外部通信**: ユーザーの講義データ、課題情報、提出状況等を開発者を含む外部サーバーへ送信することは一切ありません。
 - **認証情報の保護**: パスワードやセッションCookieを拡張機能側で独自に収集・保持することはありません。
 - **端末ローカル完結**: 表示高速化のためのキャッシュはすべてブラウザのローカルストレージ（`chrome.storage.local`）にのみ保存されます。
+
+詳細な条項は [プライバシーポリシー (docs/PRIVACY.md)](docs/PRIVACY.md) をご覧ください。
 
 ---
 
