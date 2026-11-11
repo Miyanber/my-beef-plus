@@ -1,8 +1,8 @@
 {
   "name": "my-beef-plus",
-  "displayName": "My beef plus",
-  "version": "0.0.1",
-  "description": "my-beef-plus",
+  "displayName": "My BEEF+",
+  "version": "1.0.0",
+  "description": "神戸大学 BEEF+ の時間割・課題一覧・教材ダウンロードを快適にする非公式ブラウザ拡張機能",
   "author": "Miyanber",
   "scripts": {
     "dev": "plasmo dev",
@@ -37,7 +37,7 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://*/*"
+      "https://beefplus.center.kobe-u.ac.jp/*"
     ]
   }
 }
