@@ -1,3 +1,7 @@
+# Local backups
+/backup/
+/_backup/
+
 # Samples (実機HTML・個人情報除外)
 /samples
 
