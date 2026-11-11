@@ -52,10 +52,6 @@ my-beef-plus/
 │   │   ├── legacy-theme.css # ネイティブ画面用ダークテーマ（shadcn Zinc調）
 │   │   └── content.ts       # document_start で即座にスタイル注入を行うスクリプト
 │   └── package.json
-├── next/            # Webプロトタイプ & UIモックアップ開発環境（Next.js 16 + React 19）
-│   ├── app/                 # Next.js App Router 画面群
-│   ├── components/          # プロトタイプ用コンポーネント（plasmo への移植元）
-│   └── package.json
 ├── samples/         # BEEF+実機から保存した検証用 HTML / アセット群
 │   ├── lms/                 # 実機画面のHTML構造（timetable, task, course, submission）
 │   └── static/              # BEEF+ オリジナルの CSS / JS / 画像
@@ -90,24 +86,6 @@ pnpm package
 
 # TypeScript 型チェック（コミット前必須）
 pnpm tsc --noEmit
-```
-
-### 3.2 UIプロトタイプ環境 (`next`)
-
-```bash
-cd next
-
-# 依存パッケージインストール
-pnpm install
-
-# 開発サーバー起動 (http://localhost:3000)
-pnpm dev
-
-# 静的解析・リント
-pnpm lint
-
-# ビルド
-pnpm build
 ```
 
 ---
@@ -164,9 +142,7 @@ pnpm build
 
 - [ ] **責務分離の厳守**: 課題提出・テスト・メッセージ画面に React UI を適用していないか？
 - [ ] **型チェックの通過**: `cd plasmo && pnpm tsc --noEmit` を実行し、TypeScript エラーが 0 件であるか？
-- [ ] **パス記法 & エイリアス**:
-  - Plasmo 側: `~lib/...`, `~components/...`, `~pages/...` のチルダエイリアスを使用しているか？
-  - Next.js 側: `@/components/...`, `@/lib/...` のエイリアスを使用しているか？
+- [ ] **パス記法 & エイリアス**: `~lib/...`, `~components/...`, `~pages/...` のチルダエイリアスを使用しているか？
 - [ ] **セッション & セキュリティ**: 認証情報（パスワードやクッキー）をローカルに平文保存・外部送信していないか？
 - [ ] **サンプル保護**: `samples/` ディレクトリ内の実機サンプルを不要に編集・削除していないか？
 - [ ] **ダークテーマ調和**: 新規追加した UI 要素がライト/ダークの両モードで破綻なく視認できるか？
