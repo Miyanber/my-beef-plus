@@ -52,9 +52,9 @@ my-beef-plus/
 │   │   ├── legacy-theme.css # ネイティブ画面用ダークテーマ（shadcn Zinc調）
 │   │   └── content.ts       # document_start で即座にスタイル注入を行うスクリプト
 │   └── package.json
-├── samples/         # BEEF+実機から保存した検証用 HTML / アセット群
-│   ├── lms/                 # 実機画面のHTML構造（timetable, task, course, submission）
-│   └── static/              # BEEF+ オリジナルの CSS / JS / 画像
+├── samples/         # BEEF+ / BEEF2026 実機から保存した検証用 HTML / アセット群
+│   ├── BEEF+/               # 現行 BEEF+ の実機サンプル（lms/, static/ 等）
+│   └── BEEF2026/            # BEEF2026 の実機サンプル
 └── docs/            # 仕様書・設計書（PRD.md 等）
 ```
 
@@ -115,7 +115,7 @@ pnpm tsc --noEmit
 
 ### 5.2 パーサー・スクレイピング設計 (`plasmo/src/lib/parsers/`)
 - BEEF+ の HTML は年代や講義種別によって構造が揺らぐことがあります。
-- セレクタ追加・変更の際は、必ず `samples/lms/` の実機 HTML（`timetable.html`, `course/`, `task.html`, `submission/`）を確認してください。
+- セレクタ追加・変更の際は、必ず `samples/BEEF+/`（または `samples/BEEF2026/`）配下の実機 HTML（`lms/timetable.html`, `lms/course/`, `lms/task.html`, `lms/course/report/submission/` 等）を確認してください。
 - **防御的実装**: `querySelector` が null を返す可能性を常に考慮し、オプショナルチェイニング (`?.`) や安全なフォールバック値を設けてください。パースエラーで画面全体がクラッシュしないように `try-catch` で保護します。
 
 ### 5.3 教材 1クリックダウンロード機構 (`plasmo/src/lib/download.ts`)

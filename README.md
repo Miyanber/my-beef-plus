@@ -15,7 +15,7 @@
 ```plaintext
 my-beef-plus/
 ├── plasmo/          # Chrome拡張機能本体（Plasmo + React + Tailwind CSS + shadcn/ui）
-├── samples/         # BEEF+実機から保存したサンプルHTML・アセット（パーサー検証用・.gitignore対象）
+├── samples/         # BEEF+ / BEEF2026 実機から保存したサンプルHTML・アセット（パーサー検証用・.gitignore対象）
 └── docs/            # 仕様書・設計書（PRD.md 等）
 ```
 
@@ -109,11 +109,12 @@ PLASMO_PUBLIC_DEBUG="True"
 
 ### 2. サンプルHTML (`samples/`) を用いた検証
 
-`samples/` ディレクトリには、BEEF+実機のHTMLファイルが保存されています。
-- `samples/lms/timetable.html`: 時間割画面のHTML構造
-- `samples/lms/task.html`: タスク一覧画面のHTML構造
-- `samples/lms/course/`: 講義トップ・教材一覧のHTML構造
-- `samples/lms/course/report/submission/`: 課題提出画面のHTML構造
+`samples/` ディレクトリには、BEEF+ および BEEF2026 実機のHTMLファイルがサブフォルダごとに保存されています（`samples/BEEF+/`, `samples/BEEF2026/`）。
+- `samples/BEEF+/lms/timetable.html`: 時間割画面のHTML構造
+- `samples/BEEF+/lms/task.html`: タスク一覧画面のHTML構造
+- `samples/BEEF+/lms/course/`: 講義トップ・教材一覧のHTML構造
+- `samples/BEEF+/lms/course/report/submission/`: 課題提出画面のHTML構造
+- `samples/BEEF2026/`: BEEF2026 の実機HTMLサンプル
 
 パーサー関数（[`plasmo/src/lib/parsers/`](file:///c:/Users/Miyanber/Desktop/dev/repos/my-beef-plus/plasmo/src/lib/parsers/)）のセレクタ変更や新規パース処理を作成する際は、これらのHTMLのクラス名・DOMツリーを参照して検証してください。
 
