@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getBeef2026Url } from "@/lib/storage-cache"
 import { downloadMaterial } from "@/lib/download"
 import { formatDateTime, formatRange, getDeadlineInfo, type Urgency } from "@/lib/format"
 import { loadAnnouncementDetail } from "@/lib/native"
@@ -578,6 +579,7 @@ function MessageSection({ items, newMessageUrl }: { items: Message[]; newMessage
 export function CourseView({ course }: { course: CourseDetail }) {
   const header = course.header
   const schedule = header?.schedule.replace(/\//g, " ・ ") ?? ""
+  const beefUrl = course.beef2026Url || getBeef2026Url(course.id, header?.code)
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
@@ -596,6 +598,32 @@ export function CourseView({ course }: { course: CourseDetail }) {
           </p>
         )}
       </section>
+
+      {/* BEEF2026 (旧LMS) 連携バナー */}
+      {beefUrl && (
+        <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-amber-400/30 dark:bg-amber-400/10">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
+              <ExternalLink className="size-5" />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-foreground">この授業は BEEF2026 で展開されています</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                講義資料や小テスト等は旧 LMS（BEEF2026）側で提供されています。
+              </p>
+            </div>
+          </div>
+          <a
+            href={beefUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition-colors dark:bg-amber-500 dark:hover:bg-amber-600"
+          >
+            <span>BEEF2026 を開く</span>
+            <ExternalLink className="size-3.5" />
+          </a>
+        </section>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {/* 左: 講義の中身 */}

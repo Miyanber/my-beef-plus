@@ -4,6 +4,7 @@ const localArea = new Storage({ area: "local" });
 const CACHE_PREFIX = "my_beef_cache_";
 const SIDEBAR_KEY = "my_beef_sidebar_open";
 const SIDEBAR_OVERRIDE_KEY = "my_beef_sidebar_user_override";
+const BEEF2026_MAP_KEY = "beef2026_course_map";
 
 /**
  * サイドバー自動開閉の判定基準となるブレークポイント (px)。
@@ -138,3 +139,40 @@ export function setSyncSidebarOpen(isOpen: boolean): void {
   localArea.set(SIDEBAR_KEY, isOpen).catch(() => {});
   localArea.set(SIDEBAR_OVERRIDE_KEY, true).catch(() => {});
 }
+
+// ---------------------------------------------------------------------------
+// BEEF2026 コース URL マッピング管理
+// ---------------------------------------------------------------------------
+
+/**
+ * 全科目の BEEF2026 URL マップを同期的に取得する (key: courseId または code, value: url)
+ */
+export function getSyncBeef2026Map(): Record<string, string> {
+  return getSyncCache<Record<string, string>>(BEEF2026_MAP_KEY) ?? {};
+}
+
+/**
+ * 指定科目の BEEF2026 URL を取得する（courseId または 科目コード で検索）
+ */
+export function getBeef2026Url(courseId?: string, code?: string): string | undefined {
+  const map = getSyncBeef2026Map();
+  if (courseId && map[courseId]) return map[courseId];
+  if (code && map[code]) return map[code];
+  return undefined;
+}
+
+/**
+ * 特定の科目に対する BEEF2026 URL を保存・更新・削除する
+ * @param key courseId または 科目コード
+ * @param url 保存するURL（空文字列や null/undefined の場合は削除）
+ */
+export function setBeef2026Url(key: string, url: string | null | undefined): void {
+  const map = { ...getSyncBeef2026Map() };
+  if (!url || !url.trim()) {
+    delete map[key];
+  } else {
+    map[key] = url.trim();
+  }
+  setSyncCache(BEEF2026_MAP_KEY, map);
+}
+
