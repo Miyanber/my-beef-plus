@@ -2,7 +2,7 @@
  * BEEF+ 本来の（非表示にしている）DOMを操作するブリッジ。
  * 自前UIから「ネイティブの機能」を呼び出したいときに使う。
  */
-import { parseQuillScriptText, sanitizeHtml } from "./parsers/dom";
+import { isBlankEditor, norm, readQuillScript, sanitizeHtml, textOf } from "./parsers/dom";
 import type { AnnouncementDetail } from "./timetable-data";
 
 /** 時間割の年度・期間セレクトを書き換えて、BEEF+ のフォームを送信する */
@@ -25,72 +25,312 @@ export function goToCurrentTimetable(): void {
   document.querySelector<HTMLFormElement>("#todaysTimetable")?.submit();
 }
 
-/** メインワールドのコンテキストでインラインスクリプトを実行する */
-function runInMainWorld(code: string): void {
-  const script = document.createElement("script");
-  script.textContent = code;
-  (document.head || document.documentElement).appendChild(script);
-  script.remove();
+/**
+ * お知らせ詳細の DOM（#info_detail_view / #info_detail_view2 / Ajax レスポンス HTML）から
+ * タイトル・発信者・掲示日・本文を抽出する。
+ *
+ * BEEF+ には2種類のお知らせ詳細テンプレートが存在するため両方に対応する:
+ *  - 講義トップ用 (`/lms/coursetop/information/listdetail` -> `#info_preview_coursetop` / `#info_detail_view`):
+ *    タイトル `#osiraseTitle`, ヘッダー `掲示日` / `発信者` / `内容`, Quill `topInofrmationDetailParts`
+ *  - 共通お知らせ用 (`/lms/course/information/listdetail` -> `#info_preview` / `#info_detail_view2`):
+ *    タイトル `#info_preview .block-title-txt`, ヘッダー `教職員名` / `内容詳細`, Quill `inofrmationDetailParts`
+ */
+export function parseAnnouncementDetailFromRoot(
+  root: ParentNode,
+  doc: Document,
+  id: string,
+  fallbackTitle: string = "",
+): AnnouncementDetail | null {
+  const osiraseTitle = textOf(root.querySelector("#osiraseTitle"));
+  const previewBlockTitle = textOf(root.querySelector("#info_preview .block-title-txt"));
+  const explicitTitle =
+    osiraseTitle || (previewBlockTitle && previewBlockTitle !== "お知らせ 詳細" ? previewBlockTitle : "");
+  const title = explicitTitle || fallbackTitle;
+
+  let sender = "";
+  let period = "";
+
+  root.querySelectorAll(".contents-detail").forEach((dt) => {
+    const header = textOf(dt.querySelector(".contents-header"));
+    const inputArea = dt.querySelector(".contents-input-area");
+    if (!inputArea) return;
+
+    if ((header === "発信者" || header === "教職員名") && !sender) {
+      const val = textOf(inputArea);
+      if (val) sender = val;
+    } else if (header === "掲示日" && !period) {
+      if (inputArea.querySelector(".contents-time-to")) {
+        const dates = Array.from(inputArea.querySelectorAll("span"))
+          .filter((s) => !s.classList.contains("contents-time-to"))
+          .map(textOf)
+          .filter(Boolean);
+        period = dates.join(" ～ ");
+      } else {
+        period = textOf(inputArea);
+      }
+    }
+  });
+
+  let bodyHtml = "";
+
+  // パターン1: レンダリング済みの .ql-editor
+  const qlEditor = root.querySelector(".ql-editor");
+  if (qlEditor && !isBlankEditor(qlEditor)) {
+    bodyHtml = sanitizeHtml(qlEditor.innerHTML, doc);
+  }
+
+  // パターン2: Quill 初期化前の script 内 Delta JSON (topInofrmationDetailParts / inofrmationDetailParts)
+  if (!bodyHtml) {
+    const fromScript =
+      readQuillScript(root, doc, "topInofrmationDetailParts") ??
+      readQuillScript(root, doc, "inofrmationDetailParts") ??
+      readQuillScript(root, doc);
+    if (fromScript?.html) {
+      bodyHtml = fromScript.html;
+    }
+  }
+
+  // パターン3: #topInofrmationDetailParts / #inofrmationDetailPartsBodyEditor 直下のテキスト
+  if (!bodyHtml) {
+    const parts = root.querySelector("#topInofrmationDetailParts, #inofrmationDetailPartsBodyEditor");
+    if (parts && norm(parts.textContent)) {
+      bodyHtml = sanitizeHtml(parts.innerHTML, doc);
+    }
+  }
+
+  // パターン4: 「内容」または「内容詳細」ヘッダーの .contents-input-area
+  if (!bodyHtml) {
+    root.querySelectorAll(".contents-detail").forEach((dt) => {
+      if (bodyHtml) return;
+      const header = textOf(dt.querySelector(".contents-header"));
+      if (header === "内容" || header === "内容詳細") {
+        const inputArea = dt.querySelector(".contents-input-area");
+        if (inputArea && norm(inputArea.textContent)) {
+          bodyHtml = sanitizeHtml(inputArea.innerHTML, doc);
+        }
+      }
+    });
+  }
+
+  if (!bodyHtml || !bodyHtml.trim()) {
+    return null;
+  }
+
+  return {
+    id,
+    title: title || fallbackTitle,
+    sender,
+    period,
+    bodyHtml,
+  };
 }
 
-/** Quill の setJsonData 引数から Delta JSON 文字列を安全に抽出して HTML に変換する */
-function extractBodyFromScript(scriptText: string): string | null {
-  return parseQuillScriptText(scriptText, document)?.html ?? null;
+/** _cid パラメータがページ内に存在する場合は取得する */
+function getCidParam(): string {
+  const cidEl = document.getElementsByName("_cid")[0] as HTMLInputElement | undefined;
+  return cidEl?.defaultValue || cidEl?.value || "";
+}
+
+/**
+ * 戦略1: 講義トップのお知らせ詳細エンドポイント (`/lms/coursetop/information/listdetail`) を直接 fetch する。
+ * SPA 遷移後（`<head>` に `InfoDetailCourseTop` が存在しない場合）や MV3 CSP 環境下でも確実に動作する。
+ */
+async function fetchCourseTopAnnouncement(
+  id: string,
+  courseId: string,
+  rishunen: string,
+  courseForm: HTMLFormElement | undefined,
+  fallbackTitle: string,
+): Promise<AnnouncementDetail | null> {
+  if (!id || !window.location.protocol.startsWith("http")) return null;
+
+  try {
+    const params = new URLSearchParams();
+    if (courseForm) {
+      courseForm.querySelectorAll<HTMLInputElement>("input[name]").forEach((input) => {
+        if (input.name) params.set(input.name, input.value ?? "");
+      });
+    }
+    if (courseId) params.set("idnumber", courseId);
+    if (rishunen) params.set("rishunen", rishunen);
+    if (!params.has("sort")) params.set("sort", "");
+    params.set("informationId", id);
+    if (!params.has("externalActivityId")) params.set("externalActivityId", "");
+
+    const cid = getCidParam();
+    if (cid) params.set("_cid", cid);
+
+    const res = await fetch(`/lms/coursetop/information/listdetail?${params.toString()}`, {
+      method: "GET",
+      credentials: "same-origin",
+      headers: { "X-Requested-With": "XMLHttpRequest" },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return parseAnnouncementDetailFromRoot(doc, document, id, fallbackTitle);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 戦略2: 共通お知らせ詳細エンドポイント (`/lms/course/information/listdetail`) を POST で直接 fetch する。
+ */
+async function fetchCourseListAnnouncement(
+  id: string,
+  courseId: string,
+  fallbackTitle: string,
+): Promise<AnnouncementDetail | null> {
+  if (!id || !window.location.protocol.startsWith("http")) return null;
+
+  try {
+    const infoForm = document.querySelector<HTMLFormElement>("#informationDtl");
+    const csrf =
+      infoForm?.querySelector<HTMLInputElement>('input[name="_csrf"]')?.value ||
+      document.querySelector<HTMLInputElement>('input[name="_csrf"]')?.value ||
+      "";
+    if (!infoForm && !csrf) return null;
+
+    const bodyParams = new URLSearchParams();
+    if (infoForm) {
+      infoForm.querySelectorAll<HTMLInputElement>("input[name]").forEach((input) => {
+        if (input.name) bodyParams.set(input.name, input.value ?? "");
+      });
+    } else {
+      bodyParams.set("_csrf", csrf);
+      bodyParams.set("viewPage", "1");
+      bodyParams.set("viewkind", "9");
+    }
+    bodyParams.set("informationId", id);
+
+    const urlParams = new URLSearchParams();
+    if (courseId) urlParams.set("idnumber", courseId);
+    const cid = getCidParam();
+    if (cid) urlParams.set("_cid", cid);
+    const query = urlParams.toString();
+    const url = `/lms/course/information/listdetail${query ? `?${query}` : ""}`;
+
+    const res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+      body: bodyParams.toString(),
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return parseAnnouncementDetailFromRoot(doc, document, id, fallbackTitle);
+  } catch {
+    return null;
+  }
 }
 
 /**
  * 講義トップのお知らせ詳細を取得する。
- * メインワールドで InfoDetailCourseTop を直接呼び出して BEEF+ に詳細ダイアログを読み込ませ、
- * DOM またはスクリプトからタイトル・発信者・掲示日・本文を抽出する。
+ *  1. `/lms/coursetop/information/listdetail` への直接 GET fetch（最速・ダイアログ非依存）
+ *  2. `/lms/course/information/listdetail` への直接 POST fetch（フォールバック）
+ *  3. ネイティブDOMリンクのクリックおよび `#info_detail_view` / `#info_detail_view2` の監視
  */
-export async function loadAnnouncementDetail(id: string, fallbackTitle: string = ""): Promise<AnnouncementDetail | null> {
-  // 1. メインワールドで InfoDetailCourseTop を直接発火
-  runInMainWorld(`
-    (function() {
-      try {
-        var fakeEvent = {
-          preventDefault: function() {},
-          stopPropagation: function() {},
-          target: document.body
-        };
-        if (typeof InfoDetailCourseTop === 'function') {
-          InfoDetailCourseTop(fakeEvent, ${JSON.stringify(id)});
-        } else if (typeof InfoDetail === 'function') {
-          InfoDetail(fakeEvent, ${JSON.stringify(id)}, "");
-        }
-      } catch (err) {
-        console.warn("[my-beef-plus] main-world InfoDetailCourseTop error:", err);
-      }
-    })();
-  `);
+export async function loadAnnouncementDetail(
+  id: string,
+  fallbackTitle: string = "",
+  courseId?: string,
+): Promise<AnnouncementDetail | null> {
+  const courseForm =
+    document.querySelector<HTMLFormElement>("#contentsWrapper #courseTopForm") ??
+    Array.from(document.querySelectorAll<HTMLFormElement>("form#courseTopForm")).find((f) =>
+      f.querySelector('input[name="idnumber"]'),
+    );
 
-  // 2. DOM のリンクも念のためクリック発火
-  const links = Array.from(document.querySelectorAll<HTMLElement>("a.infoTitle, #courseViewInformation a, a[onclick*='InfoDetail']"));
-  const link = links.find((a) => {
+  const resolvedCourseId =
+    courseId ||
+    new URLSearchParams(window.location.search).get("idnumber") ||
+    courseForm?.querySelector<HTMLInputElement>('input[name="idnumber"]')?.value ||
+    document.querySelector<HTMLInputElement>('input[name="idnumber"]')?.value ||
+    "";
+
+  const rishunen =
+    courseForm?.querySelector<HTMLInputElement>('input[name="rishunen"]')?.value ||
+    document.querySelector<HTMLInputElement>('input[name="rishunen"]')?.value ||
+    resolvedCourseId.match(/^(\d{4})/)?.[1] ||
+    "";
+
+  // 1. 直接 GET fetch (/lms/coursetop/information/listdetail)
+  const fromCourseTop = await fetchCourseTopAnnouncement(id, resolvedCourseId, rishunen, courseForm, fallbackTitle);
+  if (fromCourseTop) return fromCourseTop;
+
+  // 2. 直接 POST fetch (/lms/course/information/listdetail)
+  const fromCourseList = await fetchCourseListAnnouncement(id, resolvedCourseId, fallbackTitle);
+  if (fromCourseList) return fromCourseList;
+
+  // 3. フォールバック: ネイティブDOMの既存ダイアログ確認 & リンククリック
+  const getDialogViews = (): HTMLElement[] =>
+    Array.from(document.querySelectorAll<HTMLElement>("#info_detail_view, #info_detail_view2, .ui-dialog-content"));
+
+  // 既に同一お知らせがDOM内に展開されている場合（ローカルHTML検証時など）
+  for (const view of getDialogViews()) {
+    const parsed = parseAnnouncementDetailFromRoot(view, document, id, fallbackTitle);
+    if (parsed) {
+      const domTitle =
+        textOf(view.querySelector("#osiraseTitle")) ||
+        textOf(view.querySelector("#info_preview .block-title-txt"));
+      const domInfoId =
+        document.querySelector<HTMLInputElement>("#informationDtl #informationId")?.value ||
+        courseForm?.querySelector<HTMLInputElement>("#informationId")?.value ||
+        "";
+      if ((fallbackTitle && domTitle === fallbackTitle) || (id && domInfoId === id)) {
+        return parsed;
+      }
+    }
+  }
+
+  // 別のお知らせの古いDOMキャッシュが残らないようクリアしてからクリック発火
+  getDialogViews().forEach((v) => {
+    v.innerHTML = "";
+  });
+
+  // 講義トップ内のリンク (#courseViewInformation) を最優先で探し、無ければヘッダー通知メニュー等を探す
+  const courseLinks = Array.from(
+    document.querySelectorAll<HTMLElement>("#courseViewInformation a.infoTitle, #courseViewInformation a"),
+  );
+  const globalLinks = Array.from(
+    document.querySelectorAll<HTMLElement>("a.infoTitle, a[onclick*='InfoDetail']"),
+  );
+
+  const matchLink = (a: HTMLElement): boolean => {
     const onclick = a.getAttribute("onclick") ?? "";
     const data1 = a.getAttribute("data1") ?? "";
     const cleanOnclick = onclick.replace(/\s/g, "");
     return (
-      cleanOnclick.includes(`(${id})`) ||
-      cleanOnclick.includes(`,${id})`) ||
-      cleanOnclick.includes(`,${id},`) ||
-      cleanOnclick.includes(`'${id}'`) ||
-      cleanOnclick.includes(`"${id}"`) ||
-      data1 === id ||
-      (fallbackTitle && a.textContent?.trim() === fallbackTitle)
+      (!!id &&
+        (cleanOnclick.includes(`(${id})`) ||
+          cleanOnclick.includes(`,${id})`) ||
+          cleanOnclick.includes(`,${id},`) ||
+          cleanOnclick.includes(`'${id}'`) ||
+          cleanOnclick.includes(`"${id}"`) ||
+          data1 === id)) ||
+      (!!fallbackTitle && a.textContent?.trim() === fallbackTitle)
     );
-  });
+  };
 
+  const link = courseLinks.find(matchLink) ?? globalLinks.find(matchLink);
   if (link) {
     try {
       link.click();
-      link.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true, view: window }));
     } catch {
       // 無視
     }
   }
 
-  // 3. ネイティブのダイアログが自前UIの背後でチラつかないよう非表示（ただしスクリプト実行を壊さないよう透明化）
+  // ネイティブのダイアログが自前UIの背後でチラつかないよう非表示
   const hideNativeDialog = () => {
     document.querySelectorAll<HTMLElement>(".ui-dialog, .ui-widget-overlay").forEach((el) => {
       el.style.setProperty("opacity", "0", "important");
@@ -100,118 +340,18 @@ export async function loadAnnouncementDetail(id: string, fallbackTitle: string =
   };
 
   try {
-    // 4. ダイアログ内に情報が読み込まれるのを待つ (最大5秒: 100ms * 50)
+    // ダイアログ内に情報が読み込まれるのを待つ (最大5秒: 100ms * 50)
     for (let i = 0; i < 50; i++) {
       hideNativeDialog();
 
-      const view = document.querySelector("#info_detail_view, .ui-dialog-content");
-      if (view) {
-        const title = view.querySelector("#osiraseTitle")?.textContent?.trim() || fallbackTitle;
-        let sender = "";
-        let period = "";
-
-        view.querySelectorAll(".contents-detail").forEach((dt) => {
-          const header = dt.querySelector(".contents-header")?.textContent?.trim();
-          const val = dt.querySelector(".contents-input-area")?.textContent?.replace(/\s+/g, " ")?.trim();
-          if (header === "発信者" && val) sender = val;
-          if (header === "掲示日" && val) period = val;
-        });
-
-        let bodyHtml = "";
-
-        // パターン1: レンダリング済みの .ql-editor
-        const qlEditor = view.querySelector(".ql-editor");
-        if (qlEditor && qlEditor.textContent && qlEditor.textContent.trim().length > 0) {
-          bodyHtml = sanitizeHtml(qlEditor.innerHTML, document);
-        }
-
-        // パターン2: Quill 初期化前の script 内 Delta JSON
-        if (!bodyHtml) {
-          const scripts = view.querySelectorAll("script");
-          for (const s of Array.from(scripts)) {
-            const extracted = extractBodyFromScript(s.textContent || "");
-            if (extracted) {
-              bodyHtml = extracted;
-              break;
-            }
-          }
-        }
-
-        // パターン3: #topInofrmationDetailParts 直下のテキスト
-        if (!bodyHtml) {
-          const parts = view.querySelector("#topInofrmationDetailParts");
-          if (parts && parts.textContent && parts.textContent.trim().length > 0) {
-            bodyHtml = sanitizeHtml(parts.innerHTML, document);
-          }
-        }
-
-        // パターン4: 「内容」ヘッダーの .contents-input-area
-        if (!bodyHtml) {
-          view.querySelectorAll(".contents-detail").forEach((dt) => {
-            const header = dt.querySelector(".contents-header")?.textContent?.trim();
-            if (header === "内容") {
-              const inputArea = dt.querySelector(".contents-input-area");
-              if (inputArea && inputArea.textContent && inputArea.textContent.trim().length > 0) {
-                bodyHtml = sanitizeHtml(inputArea.innerHTML, document);
-              }
-            }
-          });
-        }
-
-        // 本文が取得できた場合は即座に返却
-        if (bodyHtml && bodyHtml.trim()) {
-          return {
-            id,
-            title: title || fallbackTitle,
-            sender,
-            period,
-            bodyHtml,
-          };
+      for (const view of getDialogViews()) {
+        const parsed = parseAnnouncementDetailFromRoot(view, document, id, fallbackTitle);
+        if (parsed) {
+          return parsed;
         }
       }
 
       await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-
-    // タイムアウト時のフォールバック
-    const finalView = document.querySelector("#info_detail_view, .ui-dialog-content");
-    if (finalView) {
-      const title = finalView.querySelector("#osiraseTitle")?.textContent?.trim() || fallbackTitle;
-      let sender = "";
-      let period = "";
-      finalView.querySelectorAll(".contents-detail").forEach((dt) => {
-        const header = dt.querySelector(".contents-header")?.textContent?.trim();
-        const val = dt.querySelector(".contents-input-area")?.textContent?.replace(/\s+/g, " ")?.trim();
-        if (header === "発信者" && val) sender = val;
-        if (header === "掲示日" && val) period = val;
-      });
-
-      // script 内の Delta JSON を再度走査
-      let bodyHtml = "";
-      finalView.querySelectorAll("script").forEach((s) => {
-        const extracted = extractBodyFromScript(s.textContent || "");
-        if (extracted && !bodyHtml) bodyHtml = extracted;
-      });
-
-      if (bodyHtml) {
-        return {
-          id,
-          title: title || fallbackTitle,
-          sender,
-          period,
-          bodyHtml,
-        };
-      }
-
-      if (title) {
-        return {
-          id,
-          title,
-          sender,
-          period,
-          bodyHtml: "<p class='text-muted-foreground'>本文の読み込みがタイムアウトしました。標準画面から確認してください。</p>",
-        };
-      }
     }
   } catch (e) {
     console.error("[my-beef-plus] failed to load announcement detail:", e);
@@ -221,3 +361,4 @@ export async function loadAnnouncementDetail(id: string, fallbackTitle: string =
 
   return null;
 }
+

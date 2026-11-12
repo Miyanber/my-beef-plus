@@ -149,6 +149,13 @@ export async function revalidatePage(targetUrl: string, route: CustomRoute): Pro
       currentContents.innerHTML = newContents.innerHTML;
     }
 
+    // #contentsWrapper 外にある #informationDtl の CSRF トークン等も最新ページから同期
+    const newInfoForm = doc.querySelector<HTMLFormElement>("#informationDtl");
+    const currentInfoForm = document.querySelector<HTMLFormElement>("#informationDtl");
+    if (newInfoForm && currentInfoForm) {
+      currentInfoForm.innerHTML = newInfoForm.innerHTML;
+    }
+
     // 2. データの解析とキャッシュ更新
     const key = getRouteCacheKey(route);
     if (route.type === "timetable") {

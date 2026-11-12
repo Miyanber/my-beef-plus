@@ -227,22 +227,23 @@ function AnnouncementDialog({ detail, onClose }: { detail: AnnouncementDetailSta
   )
 }
 
-function AnnouncementSection({ items }: { items: Announcement[] }) {
+function AnnouncementSection({ courseId, items }: { courseId: string; items: Announcement[] }) {
   const [detail, setDetail] = useState<AnnouncementDetailState | null>(null)
 
   const open = async (a: Announcement) => {
-    setDetail({ title: a.title, html: null, loading: true })
-    const res = await loadAnnouncementDetail(a.id, a.title)
+    const fallbackPeriod = formatRange(a.postingPeriod)
+    setDetail({ title: a.title, period: fallbackPeriod, html: null, loading: true })
+    const res = await loadAnnouncementDetail(a.id, a.title, courseId)
     if (res) {
       setDetail({
         title: res.title || a.title,
         sender: res.sender,
-        period: res.period,
+        period: res.period || fallbackPeriod,
         html: res.bodyHtml || null,
         loading: false,
       })
     } else {
-      setDetail({ title: a.title, html: null, loading: false })
+      setDetail({ title: a.title, period: fallbackPeriod, html: null, loading: false })
     }
   }
 
@@ -615,7 +616,7 @@ export function CourseView({ course }: { course: CourseDetail }) {
 
         {/* 右: お知らせ・提出物など */}
         <div className="flex min-w-0 flex-col gap-6">
-          <AnnouncementSection items={course.announcements} />
+          <AnnouncementSection courseId={course.id} items={course.announcements} />
           <AssignmentSection items={course.assignments} />
           <QuizSection items={course.quizzes} />
           <SurveySection items={course.surveys} />
