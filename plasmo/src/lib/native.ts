@@ -40,11 +40,18 @@ export function parseAnnouncementDetailFromRoot(
   doc: Document,
   id: string,
   fallbackTitle: string = "",
+  options?: { allowEmptyBody?: boolean; requireMatchingTitle?: boolean },
 ): AnnouncementDetail | null {
   const osiraseTitle = textOf(root.querySelector("#osiraseTitle"));
   const previewBlockTitle = textOf(root.querySelector("#info_preview .block-title-txt"));
   const explicitTitle =
     osiraseTitle || (previewBlockTitle && previewBlockTitle !== "お知らせ 詳細" ? previewBlockTitle : "");
+
+  // DOM ポーリング時、直前に開いていた別のお知らせの残骸を誤って返さないようタイトル一致を確認する
+  if (options?.requireMatchingTitle && fallbackTitle && explicitTitle && norm(explicitTitle) !== norm(fallbackTitle)) {
+    return null;
+  }
+
   const title = explicitTitle || fallbackTitle;
 
   let sender = "";
@@ -112,8 +119,13 @@ export function parseAnnouncementDetailFromRoot(
     });
   }
 
+  const hasDetailContainer = !!root.querySelector("#info_preview_coursetop, #info_preview");
   if (!bodyHtml || !bodyHtml.trim()) {
-    return null;
+    if (options?.allowEmptyBody && hasDetailContainer) {
+      bodyHtml = "<p class='text-muted-foreground'>（本文はありません）</p>";
+    } else {
+      return null;
+    }
   }
 
   return {
@@ -147,8 +159,8 @@ async function fetchCourseTopAnnouncement(
   try {
     const params = new URLSearchParams();
     if (courseForm) {
-      courseForm.querySelectorAll<HTMLInputElement>("input[name]").forEach((input) => {
-        if (input.name) params.set(input.name, input.value ?? "");
+      new FormData(courseForm).forEach((val, key) => {
+        if (typeof val === "string") params.set(key, val);
       });
     }
     if (courseId) params.set("idnumber", courseId);
@@ -163,14 +175,17 @@ async function fetchCourseTopAnnouncement(
     const res = await fetch(`/lms/coursetop/information/listdetail?${params.toString()}`, {
       method: "GET",
       credentials: "same-origin",
-      headers: { "X-Requested-With": "XMLHttpRequest" },
+      headers: {
+        Accept: "text/html, */*; q=0.01",
+        "X-Requested-With": "XMLHttpRequest",
+      },
       cache: "no-store",
     });
     if (!res.ok) return null;
 
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
-    return parseAnnouncementDetailFromRoot(doc, document, id, fallbackTitle);
+    return parseAnnouncementDetailFromRoot(doc, document, id, fallbackTitle, { allowEmptyBody: true });
   } catch {
     return null;
   }
@@ -196,8 +211,8 @@ async function fetchCourseListAnnouncement(
 
     const bodyParams = new URLSearchParams();
     if (infoForm) {
-      infoForm.querySelectorAll<HTMLInputElement>("input[name]").forEach((input) => {
-        if (input.name) bodyParams.set(input.name, input.value ?? "");
+      new FormData(infoForm).forEach((val, key) => {
+        if (typeof val === "string") bodyParams.set(key, val);
       });
     } else {
       bodyParams.set("_csrf", csrf);
@@ -217,6 +232,7 @@ async function fetchCourseListAnnouncement(
       method: "POST",
       credentials: "same-origin",
       headers: {
+        Accept: "text/html, */*; q=0.01",
         "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
         "X-Requested-With": "XMLHttpRequest",
       },
@@ -227,7 +243,7 @@ async function fetchCourseListAnnouncement(
 
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, "text/html");
-    return parseAnnouncementDetailFromRoot(doc, document, id, fallbackTitle);
+    return parseAnnouncementDetailFromRoot(doc, document, id, fallbackTitle, { allowEmptyBody: true });
   } catch {
     return null;
   }
@@ -345,7 +361,9 @@ export async function loadAnnouncementDetail(
       hideNativeDialog();
 
       for (const view of getDialogViews()) {
-        const parsed = parseAnnouncementDetailFromRoot(view, document, id, fallbackTitle);
+        const parsed = parseAnnouncementDetailFromRoot(view, document, id, fallbackTitle, {
+          requireMatchingTitle: true,
+        });
         if (parsed) {
           return parsed;
         }

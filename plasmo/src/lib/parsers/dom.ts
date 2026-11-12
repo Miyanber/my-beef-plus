@@ -248,6 +248,48 @@ export function parseQuillDeltaToHtml(
 }
 
 /**
+ * JavaScript の文字列リテラルの中身を JSON 文字列値として安全にデコードする。
+ * Thymeleaf の JS エスケープが出力する `\'` や `\xXX` 等、素の `JSON.parse` でエラーになる
+ * エスケープシーケンスも正しく解釈する。
+ */
+function decodeJsStringLiteral(raw: string, quote: '"' | "'"): string | null {
+  try {
+    if (quote === '"') {
+      return JSON.parse(`"${raw}"`) as string;
+    }
+  } catch {
+    // JS 固有エスケープが含まれる場合は以下の正規化へ進む
+  }
+
+  try {
+    const normalized = raw.replace(
+      /\\(\\|"|'|\/|b|f|n|r|t|v|0(?![0-9])|x[0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|u\{[0-9a-fA-F]+\}|\r?\n|.)|"/g,
+      (m, esc?: string) => {
+        if (m === '"' || esc === '"') return '\\"';
+        if (!esc) return m;
+        if (esc === "\\") return "\\\\";
+        if (esc === "'") return "'";
+        if (esc === "/") return "/";
+        if (esc === "b" || esc === "f" || esc === "n" || esc === "r" || esc === "t") return `\\${esc}`;
+        if (esc === "v") return "\\u000b";
+        if (esc === "0") return "\\u0000";
+        if (esc.startsWith("x")) return `\\u00${esc.slice(1)}`;
+        if (esc.startsWith("u{")) {
+          const cp = parseInt(esc.slice(2, -1), 16);
+          return String.fromCodePoint(cp).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+        }
+        if (esc.startsWith("u")) return `\\${esc}`;
+        if (esc === "\n" || esc === "\r\n") return "";
+        return esc;
+      },
+    );
+    return JSON.parse(`"${normalized}"`) as string;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * スクリプト文字列中の `setJsonData("...")` から Quill Delta を抽出して変換する。
  */
 export function parseQuillScriptText(
@@ -257,16 +299,22 @@ export function parseQuillScriptText(
 ): { text: string; html: string } | null {
   if (!scriptText || !scriptText.includes("setJsonData")) return null;
 
-  const pattern = targetName
-    ? new RegExp(`\\b${targetName}\\s*\\.\\s*setJsonData\\(\\s*"((?:[^"\\\\]|\\\\.)*)"`)
-    : /setJsonData\(\s*"((?:[^"\\]|\\.)*)"/;
+  const targetPrefix = targetName ? `\\b${targetName}\\s*\\.\\s*` : "";
+  const dqMatch = scriptText.match(new RegExp(`${targetPrefix}setJsonData\\(\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+  const sqMatch = dqMatch
+    ? null
+    : scriptText.match(new RegExp(`${targetPrefix}setJsonData\\(\\s*'((?:[^'\\\\]|\\\\.)*)'`));
 
-  const match = scriptText.match(pattern);
-  if (!match) return null;
+  const raw = dqMatch?.[1] ?? sqMatch?.[1];
+  const quote: '"' | "'" = dqMatch ? '"' : "'";
+  if (raw == null) return null;
+
+  const unescaped = decodeJsStringLiteral(raw, quote);
+  if (unescaped == null) return null;
 
   try {
-    const unescaped = JSON.parse(`"${match[1]}"`);
-    const delta = typeof unescaped === "string" ? JSON.parse(unescaped) : unescaped;
+    const parsed = JSON.parse(unescaped);
+    const delta = typeof parsed === "string" ? JSON.parse(parsed) : parsed;
     return parseQuillDeltaToHtml(delta, doc);
   } catch {
     return null;

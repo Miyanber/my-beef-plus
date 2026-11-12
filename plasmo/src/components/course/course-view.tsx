@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import {
   Bell,
   BookOpen,
@@ -229,11 +229,19 @@ function AnnouncementDialog({ detail, onClose }: { detail: AnnouncementDetailSta
 
 function AnnouncementSection({ courseId, items }: { courseId: string; items: Announcement[] }) {
   const [detail, setDetail] = useState<AnnouncementDetailState | null>(null)
+  const requestSeqRef = useRef(0)
+
+  const close = () => {
+    requestSeqRef.current += 1
+    setDetail(null)
+  }
 
   const open = async (a: Announcement) => {
+    const seq = ++requestSeqRef.current
     const fallbackPeriod = formatRange(a.postingPeriod)
     setDetail({ title: a.title, period: fallbackPeriod, html: null, loading: true })
     const res = await loadAnnouncementDetail(a.id, a.title, courseId)
+    if (requestSeqRef.current !== seq) return
     if (res) {
       setDetail({
         title: res.title || a.title,
@@ -267,7 +275,7 @@ function AnnouncementSection({ courseId, items }: { courseId: string; items: Ann
           ))}
         </ul>
       )}
-      {detail && <AnnouncementDialog detail={detail} onClose={() => setDetail(null)} />}
+      {detail && <AnnouncementDialog detail={detail} onClose={close} />}
     </SectionCard>
   )
 }
