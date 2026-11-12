@@ -68,7 +68,10 @@ function parseAnnouncements(root: ParentNode): Announcement[] {
   return Array.from(root.querySelectorAll("#courseViewInformation .sortInformationBlock")).map((block) => {
     const link = block.querySelector(".infoTitle");
     const onclick = link?.getAttribute("onclick") ?? "";
-    const id = onclick.match(/InfoDetailCourseTop\(\s*[^,]+,\s*(\d+)/)?.[1] ?? "";
+    const id =
+      onclick.match(/InfoDetail(?:CourseTop)?\(\s*[^,]+,\s*['"]?(\d+)['"]?/)?.[1] ??
+      link?.getAttribute("data1") ??
+      "";
     const dates = Array.from(block.querySelectorAll(".infoPeriod span"))
       .filter((s) => !s.classList.contains("contents-time-to"))
       .map(textOf);
