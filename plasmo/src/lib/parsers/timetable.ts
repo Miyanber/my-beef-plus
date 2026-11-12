@@ -5,6 +5,7 @@ import {
   type TimetableCourse,
   type TimetableStore,
 } from "../timetable-data";
+import { getBeef2026Url } from "../storage-cache";
 import { norm, textOf, toHalfWidthDigits } from "./dom";
 
 const DAY_KEYS: DayKey[] = ["mon", "tue", "wed", "thu", "fri"];
@@ -86,6 +87,7 @@ export function parseTimetable(root: ParentNode): TimetableStore {
           title,
           teachers,
           color: pickCourseColor(code || id),
+          beef2026Url: getBeef2026Url(id, code),
           dates: [{ day, period }],
         };
       });

@@ -158,6 +158,7 @@ export interface CourseDetail {
   id: string; // idnumber (TimetableCourse.id と一致)
   lastUpdated: string;
   header?: CourseHeader;
+  beef2026Url?: string; // BEEF2026 (旧Moodle LMS) のコースURL
   courseSummary?: {
     text: string;
     rawHTML: string;
@@ -187,6 +188,7 @@ export interface TimetableCourse {
   title: string; // 授業名
   teachers: string[]; // 担当教員
   color: CourseColor;
+  beef2026Url?: string; // BEEF2026 のコースURL
   dates: Array<{
     day: DayKey;
     period: number;

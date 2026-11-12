@@ -12,6 +12,7 @@ import type {
   Survey,
   SubmissionStatus,
 } from "../timetable-data";
+import { setBeef2026Url } from "../storage-cache";
 import {
   collectActions,
   norm,
@@ -278,6 +279,48 @@ function parseMessages(root: ParentNode): Message[] {
 }
 
 // ---------------------------------------------------------------------------
+// BEEF2026 (旧Moodle LMS) 連携URL検出
+// ---------------------------------------------------------------------------
+
+const BEEF2026_REGEX = /https?:\/\/beef\.center\.kobe-u\.ac\.jp\/(?:[0-9]{4}\/)?course\/view\.php\?[^"'<>\s\\]*id=\d+[^"'<>\s\\]*/i;
+
+/**
+ * 講義ページから BEEF2026 (Moodle) のコースURLを抽出する
+ */
+export function extractBeef2026Url(doc: Document): string | undefined {
+  // 1. aタグのhrefから検索
+  const links = Array.from(doc.querySelectorAll<HTMLAnchorElement>('a[href*="beef.center.kobe-u.ac.jp"]'));
+  for (const a of links) {
+    const href = a.getAttribute("href") || a.href;
+    const match = href.match(BEEF2026_REGEX);
+    if (match) return match[0];
+  }
+
+  // 2. scriptタグ（QuillのJSONデータ等）から検索
+  const scripts = Array.from(doc.querySelectorAll("script"));
+  for (const script of scripts) {
+    const text = script.textContent || "";
+    if (text.includes("beef.center.kobe-u.ac.jp")) {
+      const unescaped = text.replace(/\\\//g, "/");
+      const match = unescaped.match(BEEF2026_REGEX);
+      if (match) return match[0];
+    }
+  }
+
+  // 3. onlineBodyEditor / bodyEditor のHTMLテキストから検索
+  const editorTexts = [
+    doc.querySelector("#onlineBodyEditor")?.innerHTML,
+    doc.querySelector("#bodyEditor")?.innerHTML,
+  ].filter(Boolean) as string[];
+  for (const html of editorTexts) {
+    const match = html.match(BEEF2026_REGEX);
+    if (match) return match[0];
+  }
+
+  return undefined;
+}
+
+// ---------------------------------------------------------------------------
 // エントリポイント
 // ---------------------------------------------------------------------------
 
@@ -288,11 +331,21 @@ function parseMessages(root: ParentNode): Message[] {
 export function parseCourseDetail(doc: Document, id: string): CourseDetail {
   const summary = readEditor(doc.querySelector("#bodyEditor"), doc, "courseContents", doc);
   const online = readEditor(doc.querySelector("#onlineBodyEditor"), doc, "onlineContents", doc);
+  const header = parseHeader(doc);
+  const beef2026Url = extractBeef2026Url(doc);
+
+  if (beef2026Url) {
+    setBeef2026Url(id, beef2026Url);
+    if (header?.code) {
+      setBeef2026Url(header.code, beef2026Url);
+    }
+  }
 
   return {
     id,
     lastUpdated: new Date().toISOString(),
-    header: parseHeader(doc),
+    header,
+    beef2026Url,
     courseSummary: summary ? { text: summary.text, rawHTML: summary.html } : undefined,
     classDetails: online
       ? {
