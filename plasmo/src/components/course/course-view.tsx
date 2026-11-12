@@ -18,9 +18,11 @@ import {
   Users,
   Video,
   X,
+  Settings,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getBeef2026Url } from "@/lib/storage-cache"
+import { getBeef2026Url, setBeef2026Url } from "@/lib/storage-cache"
+import { BeefUrlModal } from "@/components/beef-url-modal"
 import { downloadMaterial } from "@/lib/download"
 import { formatDateTime, formatRange, getDeadlineInfo, type Urgency } from "@/lib/format"
 import { loadAnnouncementDetail } from "@/lib/native"
@@ -579,17 +581,57 @@ function MessageSection({ items, newMessageUrl }: { items: Message[]; newMessage
 export function CourseView({ course }: { course: CourseDetail }) {
   const header = course.header
   const schedule = header?.schedule.replace(/\//g, " ・ ") ?? ""
-  const beefUrl = course.beef2026Url || getBeef2026Url(course.id, header?.code)
+  const [currentBeefUrl, setCurrentBeefUrl] = useState<string | undefined>(
+    () => course.beef2026Url || getBeef2026Url(course.id, header?.code),
+  )
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  useEffect(() => {
+    setCurrentBeefUrl(course.beef2026Url || getBeef2026Url(course.id, header?.code))
+  }, [course, header?.code])
+
+  const handleSaveBeefUrl = (url: string | null) => {
+    setBeef2026Url(course.id, url)
+    if (header?.code) {
+      setBeef2026Url(header.code, url)
+    }
+    setCurrentBeefUrl(url ?? undefined)
+  }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
+      {isModalOpen && (
+        <BeefUrlModal
+          courseTitle={header?.name ?? "講義"}
+          courseCode={header?.code}
+          currentUrl={currentBeefUrl}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveBeefUrl}
+        />
+      )}
+
       {/* 科目ヘッダー */}
       <section className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-6">
-        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          {header?.semesterLabel && <StatusBadge tone="info">{header.semesterLabel}</StatusBadge>}
-          {header?.code && <span className="font-mono">{header.code}</span>}
-          {schedule && <span>{schedule}</span>}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {header?.semesterLabel && <StatusBadge tone="info">{header.semesterLabel}</StatusBadge>}
+            {header?.code && <span className="font-mono">{header.code}</span>}
+            {schedule && <span>{schedule}</span>}
+          </div>
+
+          {!currentBeefUrl && (
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              title="この授業でBEEF2026を利用する場合、URLを紐付けできます"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+            >
+              <Link2 className="size-3.5" />
+              <span>BEEF2026連携</span>
+            </button>
+          )}
         </div>
+
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">{header?.name ?? "講義詳細"}</h1>
         {header && header.teachers.length > 0 && (
           <p className="mt-2 flex items-start gap-1.5 text-sm text-muted-foreground">
@@ -600,7 +642,7 @@ export function CourseView({ course }: { course: CourseDetail }) {
       </section>
 
       {/* BEEF2026 (旧LMS) 連携バナー */}
-      {beefUrl && (
+      {currentBeefUrl && (
         <section className="flex flex-col gap-3 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between dark:border-amber-400/30 dark:bg-amber-400/10">
           <div className="flex items-start gap-3">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs">
@@ -613,15 +655,28 @@ export function CourseView({ course }: { course: CourseDetail }) {
               </p>
             </div>
           </div>
-          <a
-            href={beefUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition-colors dark:bg-amber-500 dark:hover:bg-amber-600"
-          >
-            <span>BEEF2026 を開く</span>
-            <ExternalLink className="size-3.5" />
-          </a>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              title="BEEF2026 連携URLを編集・解除"
+              className="inline-flex items-center gap-1 rounded-xl border border-amber-500/40 bg-background/80 px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted transition-colors shadow-2xs"
+            >
+              <Settings className="size-3.5 text-muted-foreground" />
+              <span>設定</span>
+            </button>
+
+            <a
+              href={currentBeefUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-amber-700 transition-colors dark:bg-amber-500 dark:hover:bg-amber-600"
+            >
+              <span>BEEF2026 を開く</span>
+              <ExternalLink className="size-3.5" />
+            </a>
+          </div>
         </section>
       )}
 
