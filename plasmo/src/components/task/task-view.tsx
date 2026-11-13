@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react"
-import { ClipboardList, Search, Filter, Clock, ExternalLink, CircleAlert, CheckCircle2 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
-import { formatDateTime, getDeadlineInfo, type Urgency } from "@/lib/format"
-import type { TaskItem, TaskKind, TaskStore } from "@/lib/timetable-data"
+import { Search, Clock, ExternalLink, CheckCircle2 } from "lucide-react"
+import { Input } from "~components/ui/input"
+import { cn } from "~lib/utils"
+import { formatDateTime, getDeadlineInfo, type Urgency } from "~lib/format"
+import type { TaskKind, TaskSource, TaskStore } from "~lib/timetable-data"
 
 const KIND_LABELS: Record<TaskKind, { label: string; color: string }> = {
   REPORT: { label: "課題", color: "bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300 border-rose-200 dark:border-rose-800" },
@@ -21,12 +21,21 @@ const URGENCY_STYLES: Record<Urgency, { label: string; badge: string; border: st
   none: { label: "", badge: "bg-muted text-muted-foreground", border: "border-border" },
 }
 
-export function TaskView({ store }: { store: TaskStore }) {
+interface TaskViewProps {
+  store: TaskStore
+  beef2026SyncEnabled?: boolean
+}
+
+export function TaskView({ store, beef2026SyncEnabled = false }: TaskViewProps) {
   const [query, setQuery] = useState("")
   const [selectedCourse, setSelectedCourse] = useState<string>("ALL")
   const [selectedKind, setSelectedKind] = useState<string>("ALL")
+  const [selectedSource, setSelectedSource] = useState<"ALL" | TaskSource>("ALL")
 
   const allItems = store.items
+
+  // 同期設定が OFF に戻ったときはソースフィルタをリセットする
+  const activeSourceFilter = beef2026SyncEnabled ? selectedSource : "ALL"
 
   // ユニークな講義名リスト
   const courses = useMemo(() => {
@@ -42,6 +51,8 @@ export function TaskView({ store }: { store: TaskStore }) {
     const q = query.trim().toLowerCase()
     return allItems
       .filter((item) => {
+        const itemSource: TaskSource = item.source ?? "beefplus"
+        if (activeSourceFilter !== "ALL" && itemSource !== activeSourceFilter) return false
         if (selectedCourse !== "ALL" && item.courseName !== selectedCourse) return false
         if (selectedKind !== "ALL" && item.kind !== selectedKind) return false
         if (q && !item.title.toLowerCase().includes(q) && !item.courseName.toLowerCase().includes(q)) return false
@@ -52,10 +63,10 @@ export function TaskView({ store }: { store: TaskStore }) {
         const timeB = getDeadlineInfo(b.deadline).time ?? Infinity
         return timeA - timeB
       })
-  }, [allItems, query, selectedCourse, selectedKind])
+  }, [allItems, query, selectedCourse, selectedKind, activeSourceFilter])
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       {/* 検索・絞り込みコントロール */}
       <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-3">
@@ -94,6 +105,19 @@ export function TaskView({ store }: { store: TaskStore }) {
             <option value="EXAM">テスト (小テスト)</option>
             <option value="SURVEY">アンケート</option>
           </select>
+
+          {/* LMS ソースフィルタ (BEEF2026 同期 ON 時のみ表示) */}
+          {beef2026SyncEnabled && (
+            <select
+              value={selectedSource}
+              onChange={(e) => setSelectedSource(e.target.value as "ALL" | TaskSource)}
+              className="h-9 rounded-lg border border-input bg-transparent px-2.5 text-xs text-foreground outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 dark:bg-input/30"
+            >
+              <option value="ALL">すべてのLMS</option>
+              <option value="beefplus">BEEF+ のみ</option>
+              <option value="beef2026">BEEF2026 のみ</option>
+            </select>
+          )}
         </div>
 
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -127,11 +151,19 @@ export function TaskView({ store }: { store: TaskStore }) {
                   const deadlineInfo = getDeadlineInfo(item.deadline)
                   const kindConfig = KIND_LABELS[item.kind] || KIND_LABELS.OTHER
                   const urgencyConfig = URGENCY_STYLES[deadlineInfo.urgency]
+                  const isBeef2026 = item.source === "beef2026"
 
                   return (
                     <tr key={item.id} className="transition-colors hover:bg-muted/40 group">
                       <td className="py-3.5 pl-5 font-medium text-foreground">
-                        <span className="line-clamp-1">{item.courseName}</span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isBeef2026 && (
+                            <span className="inline-flex shrink-0 items-center rounded border border-sky-200 bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 dark:border-sky-800 dark:bg-sky-500/15 dark:text-sky-300">
+                              BEEF2026
+                            </span>
+                          )}
+                          <span className="line-clamp-1">{item.courseName}</span>
+                        </div>
                       </td>
                       <td className="py-3.5 text-center">
                         <span className={cn("inline-flex items-center rounded-md border px-2 py-0.5 text-[11px] font-semibold", kindConfig.color)}>
@@ -141,6 +173,8 @@ export function TaskView({ store }: { store: TaskStore }) {
                       <td className="py-3.5 pr-3">
                         <a
                           href={item.url}
+                          target={isBeef2026 ? "_blank" : undefined}
+                          rel={isBeef2026 ? "noopener noreferrer" : undefined}
                           className="flex items-center gap-1.5 font-semibold text-primary hover:underline group-hover:text-primary"
                         >
                           <span className="line-clamp-1">{item.title}</span>
@@ -170,16 +204,26 @@ export function TaskView({ store }: { store: TaskStore }) {
               const deadlineInfo = getDeadlineInfo(item.deadline)
               const kindConfig = KIND_LABELS[item.kind] || KIND_LABELS.OTHER
               const urgencyConfig = URGENCY_STYLES[deadlineInfo.urgency]
+              const isBeef2026 = item.source === "beef2026"
 
               return (
                 <a
                   key={item.id}
                   href={item.url}
+                  target={isBeef2026 ? "_blank" : undefined}
+                  rel={isBeef2026 ? "noopener noreferrer" : undefined}
                   className="flex flex-col gap-2 p-4 transition-colors hover:bg-muted/40"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-muted-foreground truncate">{item.courseName}</span>
-                    <span className={cn("inline-flex items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold", kindConfig.color)}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {isBeef2026 && (
+                        <span className="inline-flex shrink-0 items-center rounded border border-sky-200 bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 dark:border-sky-800 dark:bg-sky-500/15 dark:text-sky-300">
+                          BEEF2026
+                        </span>
+                      )}
+                      <span className="text-xs font-semibold text-muted-foreground truncate">{item.courseName}</span>
+                    </div>
+                    <span className={cn("inline-flex shrink-0 items-center rounded-md border px-1.5 py-0.5 text-[10px] font-semibold", kindConfig.color)}>
                       {item.kindLabel || kindConfig.label}
                     </span>
                   </div>

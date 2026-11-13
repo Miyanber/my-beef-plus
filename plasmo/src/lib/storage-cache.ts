@@ -1,10 +1,13 @@
 import { Storage } from "@plasmohq/storage";
+import type { TaskStore } from "./timetable-data";
 
 const localArea = new Storage({ area: "local" });
 const CACHE_PREFIX = "my_beef_cache_";
 const SIDEBAR_KEY = "my_beef_sidebar_open";
 const SIDEBAR_OVERRIDE_KEY = "my_beef_sidebar_user_override";
 const BEEF2026_MAP_KEY = "beef2026_course_map";
+const BEEF2026_TASK_SYNC_KEY = "beef2026_task_sync_enabled";
+const BEEF2026_TASK_STORE_KEY = "beef2026TaskStore";
 
 /**
  * サイドバー自動開閉の判定基準となるブレークポイント (px)。
@@ -174,5 +177,96 @@ export function setBeef2026Url(key: string, url: string | null | undefined): voi
     map[key] = url.trim();
   }
   setSyncCache(BEEF2026_MAP_KEY, map);
+}
+
+// ---------------------------------------------------------------------------
+// BEEF2026 課題締切同期設定・キャッシュ管理
+// ---------------------------------------------------------------------------
+
+/**
+ * BEEF2026 の課題同期が有効かどうかを同期的に取得する (デフォルト: false)
+ */
+export function getSyncBeef2026TaskSync(): boolean {
+  return getSyncCache<boolean>(BEEF2026_TASK_SYNC_KEY) ?? false;
+}
+
+/**
+ * BEEF2026 の課題同期設定を保存する (localStorage + chrome.storage.local)
+ */
+export function setSyncBeef2026TaskSync(enabled: boolean): void {
+  setSyncCache(BEEF2026_TASK_SYNC_KEY, enabled);
+}
+
+/**
+ * chrome.storage.local から BEEF2026 課題同期設定を非同期取得する
+ */
+export async function getBeef2026TaskSyncFromStorage(): Promise<boolean | undefined> {
+  try {
+    return await localArea.get<boolean>(BEEF2026_TASK_SYNC_KEY);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * BEEF2026 の課題キャッシュを同期的に取得する (BEEF+ 側の 0ms 表示用)
+ */
+export function getSyncBeef2026TaskStore(): TaskStore | undefined {
+  return getSyncCache<TaskStore>(BEEF2026_TASK_STORE_KEY);
+}
+
+/**
+ * BEEF2026 の課題キャッシュを BEEF+ 側の localStorage にも反映する
+ */
+export function setSyncBeef2026TaskStoreCache(store: TaskStore): void {
+  if (typeof window !== "undefined" && window.localStorage) {
+    try {
+      window.localStorage.setItem(CACHE_PREFIX + BEEF2026_TASK_STORE_KEY, JSON.stringify(store));
+    } catch {}
+  }
+}
+
+/**
+ * chrome.storage.local から BEEF2026 の課題キャッシュを取得する (オリジン横断共有用)
+ */
+export async function getBeef2026TaskStoreFromStorage(): Promise<TaskStore | undefined> {
+  try {
+    return await localArea.get<TaskStore>(BEEF2026_TASK_STORE_KEY);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * BEEF2026 の課題キャッシュを chrome.storage.local (および同一オリジンの localStorage) に保存する
+ */
+export async function saveBeef2026TaskStore(store: TaskStore): Promise<void> {
+  setSyncBeef2026TaskStoreCache(store);
+  try {
+    await localArea.set(BEEF2026_TASK_STORE_KEY, store);
+  } catch (err) {
+    console.warn("[my-beef-plus] failed to save beef2026TaskStore:", err);
+  }
+}
+
+/**
+ * 別タブ (beef.center.kobe-u.ac.jp) で保存された BEEF2026 課題キャッシュの更新を監視する
+ */
+export function watchBeef2026TaskStore(onChange: (store: TaskStore | undefined) => void): () => void {
+  let active = true;
+  const callbackMap = {
+    [BEEF2026_TASK_STORE_KEY]: () => {
+      getBeef2026TaskStoreFromStorage().then((store) => {
+        if (!active) return;
+        if (store) setSyncBeef2026TaskStoreCache(store);
+        onChange(store);
+      });
+    },
+  };
+  localArea.watch(callbackMap);
+  return () => {
+    active = false;
+    localArea.unwatch(callbackMap);
+  };
 }
 

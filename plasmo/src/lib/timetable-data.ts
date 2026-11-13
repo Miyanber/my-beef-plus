@@ -219,6 +219,8 @@ export interface TimetableStore {
 
 export type TaskKind = "REPORT" | "EXAM" | "SURVEY" | "OTHER";
 
+export type TaskSource = "beefplus" | "beef2026";
+
 export interface TaskItem {
   id: string;
   courseId: string;
@@ -228,6 +230,7 @@ export interface TaskItem {
   title: string;
   url: string;
   deadline: string; // "2026/11/05 12:00:00"
+  source?: TaskSource;
 }
 
 export interface TaskStore {
