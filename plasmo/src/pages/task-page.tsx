@@ -1,17 +1,22 @@
-import { ClipboardList, ExternalLink, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, ClipboardList, ExternalLink, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PageTitle } from "~components/page-title";
 import { TaskView } from "~components/task/task-view";
 import { BEEF2026_DASHBOARD_URL } from "~lib/parsers";
 import { scrapeTasks } from "~lib/scrapers";
 import {
+  getBeef2026SyncStatusFromStorage,
   getBeef2026TaskStoreFromStorage,
   getBeef2026TaskSyncFromStorage,
   getSyncBeef2026TaskStore,
   getSyncBeef2026TaskSync,
+  isBeef2026SyncStale,
+  requestBeef2026BackgroundSync,
   setSyncBeef2026TaskStoreCache,
   setSyncBeef2026TaskSync,
+  watchBeef2026SyncStatus,
   watchBeef2026TaskStore,
+  type Beef2026SyncStatus,
 } from "~lib/storage-cache";
 import type { TaskItem, TaskStore } from "~lib/timetable-data";
 import { usePageData } from "~lib/use-page-data";
@@ -33,14 +38,23 @@ export function TaskPage() {
 
   const [beef2026SyncEnabled, setBeef2026SyncEnabled] = useState<boolean>(() => getSyncBeef2026TaskSync());
   const [beef2026Store, setBeef2026Store] = useState<TaskStore | undefined>(() => getSyncBeef2026TaskStore());
+  const [syncStatus, setSyncStatus] = useState<Beef2026SyncStatus | undefined>(undefined);
+  const autoSyncTriggeredRef = useRef(false);
 
   useEffect(() => {
     let active = true;
 
     getBeef2026TaskSyncFromStorage().then((saved) => {
-      if (!active || typeof saved !== "boolean") return;
-      setBeef2026SyncEnabled(saved);
-      setSyncBeef2026TaskSync(saved);
+      if (!active) return;
+      const enabled = typeof saved === "boolean" ? saved : getSyncBeef2026TaskSync();
+      if (typeof saved === "boolean") {
+        setBeef2026SyncEnabled(saved);
+        setSyncBeef2026TaskSync(saved);
+      }
+      if (enabled && !autoSyncTriggeredRef.current) {
+        autoSyncTriggeredRef.current = true;
+        void requestBeef2026BackgroundSync(false);
+      }
     });
 
     getBeef2026TaskStoreFromStorage().then((store) => {
@@ -49,14 +63,25 @@ export function TaskPage() {
       setSyncBeef2026TaskStoreCache(store);
     });
 
-    const unwatch = watchBeef2026TaskStore((nextStore) => {
+    getBeef2026SyncStatusFromStorage().then((status) => {
+      if (!active || !status) return;
+      setSyncStatus(isBeef2026SyncStale(status) ? { phase: "idle" } : status);
+    });
+
+    const unwatchStore = watchBeef2026TaskStore((nextStore) => {
       if (!active) return;
       setBeef2026Store(nextStore);
     });
 
+    const unwatchStatus = watchBeef2026SyncStatus((nextStatus) => {
+      if (!active) return;
+      setSyncStatus(isBeef2026SyncStale(nextStatus) ? { phase: "idle" } : nextStatus);
+    });
+
     return () => {
       active = false;
-      unwatch();
+      unwatchStore();
+      unwatchStatus();
     };
   }, []);
 
@@ -64,6 +89,14 @@ export function TaskPage() {
     const next = !beef2026SyncEnabled;
     setBeef2026SyncEnabled(next);
     setSyncBeef2026TaskSync(next);
+    if (next) {
+      autoSyncTriggeredRef.current = true;
+      void requestBeef2026BackgroundSync(false);
+    }
+  };
+
+  const handleManualSync = () => {
+    void requestBeef2026BackgroundSync(true);
   };
 
   const mergedStore = useMemo<TaskStore | undefined>(() => {
@@ -94,6 +127,8 @@ export function TaskPage() {
   }
 
   const lastSyncedLabel = formatSyncTimestamp(beef2026Store?.lastUpdated);
+  const isSyncing = syncStatus?.phase === "syncing" && !isBeef2026SyncStale(syncStatus);
+  const isSyncError = !isSyncing && syncStatus?.phase === "error" && Boolean(syncStatus.errorMessage);
 
   return (
     <main className="flex-1 px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
@@ -135,10 +170,50 @@ export function TaskPage() {
         />
 
         {beef2026SyncEnabled && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-sky-200/80 bg-sky-50/60 px-4 py-3 text-xs dark:border-sky-900/60 dark:bg-sky-950/20 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2.5 text-sky-900 dark:text-sky-200">
-              <RefreshCw className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
-              {beef2026Store ? (
+          <div
+            className={cn(
+              "flex flex-col gap-3 rounded-2xl border px-4 py-3 text-xs sm:flex-row sm:items-center sm:justify-between",
+              isSyncError
+                ? "border-amber-200/90 bg-amber-50/70 dark:border-amber-900/60 dark:bg-amber-950/20"
+                : "border-sky-200/80 bg-sky-50/60 dark:border-sky-900/60 dark:bg-sky-950/20",
+            )}
+          >
+            <div
+              className={cn(
+                "flex items-center gap-2.5",
+                isSyncError ? "text-amber-900 dark:text-amber-200" : "text-sky-900 dark:text-sky-200",
+              )}
+            >
+              {isSyncError ? (
+                <AlertCircle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              ) : (
+                <RefreshCw
+                  className={cn(
+                    "size-4 shrink-0 text-sky-600 dark:text-sky-400",
+                    isSyncing && "animate-spin",
+                  )}
+                />
+              )}
+
+              {isSyncing ? (
+                <span>
+                  バックグラウンドで BEEF2026 を同期中…
+                  {beef2026Store && (
+                    <span className="ml-2 text-sky-700/80 dark:text-sky-300/80">
+                      (キャッシュ: {beef2026Store.items.length}件{lastSyncedLabel ? ` / ${lastSyncedLabel}` : ""})
+                    </span>
+                  )}
+                </span>
+              ) : isSyncError ? (
+                <span>
+                  {syncStatus?.errorMessage}
+                  {beef2026Store && (
+                    <span className="ml-2 text-amber-800/80 dark:text-amber-300/80">
+                      (キャッシュ: {beef2026Store.items.length}件{lastSyncedLabel ? ` / ${lastSyncedLabel}` : ""})
+                    </span>
+                  )}
+                </span>
+              ) : beef2026Store ? (
                 <span>
                   BEEF2026 同期中（{beef2026Store.items.length}件）
                   {lastSyncedLabel && (
@@ -149,19 +224,31 @@ export function TaskPage() {
                 </span>
               ) : (
                 <span>
-                  BEEF2026 のデータがまだありません。ダッシュボードを開くとタイムラインの課題が自動で取り込まれます。
+                  BEEF2026 のデータがまだありません。自動同期または「今すぐ同期」で取り込めます。
                 </span>
               )}
             </div>
-            <a
-              href={BEEF2026_DASHBOARD_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-xs font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 dark:hover:bg-sky-900/60"
-            >
-              <span>BEEF2026 を開いて同期</span>
-              <ExternalLink className="size-3.5" />
-            </a>
+
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={isSyncing}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-sky-300 bg-white px-3 py-1.5 text-xs font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200 dark:hover:bg-sky-900/60"
+              >
+                <RefreshCw className={cn("size-3.5", isSyncing && "animate-spin")} />
+                <span>{isSyncing ? "同期中..." : "今すぐ同期"}</span>
+              </button>
+              <a
+                href={BEEF2026_DASHBOARD_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-white/80 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-colors hover:bg-muted dark:bg-card/80 dark:hover:bg-muted"
+              >
+                <span>BEEF2026 を開く</span>
+                <ExternalLink className="size-3.5" />
+              </a>
+            </div>
           </div>
         )}
 

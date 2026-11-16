@@ -19,6 +19,6 @@
       ]
     },
     "baseUrl": ".",
-    "types": ["node", "plasmo"]
+    "types": ["node", "plasmo", "chrome"]
   }
 }

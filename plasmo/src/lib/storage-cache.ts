@@ -8,6 +8,30 @@ const SIDEBAR_OVERRIDE_KEY = "my_beef_sidebar_user_override";
 const BEEF2026_MAP_KEY = "beef2026_course_map";
 const BEEF2026_TASK_SYNC_KEY = "beef2026_task_sync_enabled";
 const BEEF2026_TASK_STORE_KEY = "beef2026TaskStore";
+const BEEF2026_SYNC_STATUS_KEY = "beef2026_sync_status";
+
+export const BEEF2026_SYNC_COOLDOWN_MS = 5 * 60 * 1000;
+export const BEEF2026_SYNC_TIMEOUT_MS = 25 * 1000;
+
+export type Beef2026SyncPhase = "idle" | "syncing" | "error";
+
+export interface Beef2026SyncStatus {
+  phase: Beef2026SyncPhase;
+  startedAt?: number;
+  lastAttemptAt?: number;
+  activeTabId?: number;
+  errorMessage?: string;
+}
+
+export type Beef2026RuntimeMessage =
+  | { type: "SYNC_BEEF2026"; force?: boolean }
+  | { type: "BEEF2026_SYNC_DONE" }
+  | { type: "BEEF2026_SYNC_FAILED"; reason?: string };
+
+export interface SyncBeef2026Response {
+  started: boolean;
+  reason?: string;
+}
 
 /**
  * サイドバー自動開閉の判定基準となるブレークポイント (px)。
@@ -249,17 +273,17 @@ export async function saveBeef2026TaskStore(store: TaskStore): Promise<void> {
   }
 }
 
-/**
- * 別タブ (beef.center.kobe-u.ac.jp) で保存された BEEF2026 課題キャッシュの更新を監視する
- */
-export function watchBeef2026TaskStore(onChange: (store: TaskStore | undefined) => void): () => void {
+function watchLocalKey<T>(
+  key: string,
+  fetcher: () => Promise<T | undefined>,
+  onChange: (value: T | undefined) => void,
+): () => void {
   let active = true;
   const callbackMap = {
-    [BEEF2026_TASK_STORE_KEY]: () => {
-      getBeef2026TaskStoreFromStorage().then((store) => {
+    [key]: () => {
+      fetcher().then((val) => {
         if (!active) return;
-        if (store) setSyncBeef2026TaskStoreCache(store);
-        onChange(store);
+        onChange(val);
       });
     },
   };
@@ -268,5 +292,80 @@ export function watchBeef2026TaskStore(onChange: (store: TaskStore | undefined) 
     active = false;
     localArea.unwatch(callbackMap);
   };
+}
+
+/**
+ * 別タブ (beef.center.kobe-u.ac.jp) で保存された BEEF2026 課題キャッシュの更新を監視する
+ */
+export function watchBeef2026TaskStore(onChange: (store: TaskStore | undefined) => void): () => void {
+  return watchLocalKey(
+    BEEF2026_TASK_STORE_KEY,
+    async () => {
+      const store = await getBeef2026TaskStoreFromStorage();
+      if (store) setSyncBeef2026TaskStoreCache(store);
+      return store;
+    },
+    onChange,
+  );
+}
+
+/**
+ * syncing 状態がタイムアウト上限を超えて残留していないか判定する
+ */
+export function isBeef2026SyncStale(
+  status: Beef2026SyncStatus | undefined,
+  now = Date.now(),
+): boolean {
+  return (
+    status?.phase === "syncing" &&
+    typeof status.startedAt === "number" &&
+    now - status.startedAt > BEEF2026_SYNC_TIMEOUT_MS + 5000
+  );
+}
+
+/**
+ * chrome.storage.local から BEEF2026 バックグラウンド同期ステータスを取得する
+ */
+export async function getBeef2026SyncStatusFromStorage(): Promise<Beef2026SyncStatus | undefined> {
+  try {
+    return await localArea.get<Beef2026SyncStatus>(BEEF2026_SYNC_STATUS_KEY);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * BEEF2026 バックグラウンド同期ステータスを chrome.storage.local に保存する
+ */
+export async function setBeef2026SyncStatus(status: Beef2026SyncStatus): Promise<void> {
+  try {
+    await localArea.set(BEEF2026_SYNC_STATUS_KEY, status);
+  } catch (err) {
+    console.warn("[my-beef-plus] failed to save beef2026 sync status:", err);
+  }
+}
+
+/**
+ * BEEF2026 バックグラウンド同期ステータスの更新を監視する
+ */
+export function watchBeef2026SyncStatus(
+  onChange: (status: Beef2026SyncStatus | undefined) => void,
+): () => void {
+  return watchLocalKey(BEEF2026_SYNC_STATUS_KEY, getBeef2026SyncStatusFromStorage, onChange);
+}
+
+/**
+ * Background Service Worker に BEEF2026 のバックグラウンド同期をリクエストする
+ */
+export async function requestBeef2026BackgroundSync(force = false): Promise<SyncBeef2026Response> {
+  try {
+    const res = await chrome.runtime.sendMessage<Beef2026RuntimeMessage, SyncBeef2026Response>({
+      type: "SYNC_BEEF2026",
+      force,
+    });
+    return res ?? { started: false, reason: "no_response" };
+  } catch {
+    return { started: false, reason: "unavailable" };
+  }
 }
 
