@@ -1,33 +1,20 @@
-This is a [Plasmo extension](https://docs.plasmo.com/) project bootstrapped with [`plasmo init`](https://www.npmjs.com/package/plasmo).
+# My BEEF+ (`plasmo`)
 
-## Getting Started
+[My BEEF+](../README.md) の Chrome 拡張機能本体（Plasmo Framework / Manifest V3）のディレクトリです。
 
-First, run the development server:
+ビルド手順、機能概要、アーキテクチャ、およびコントリビューション方法については、リポジトリルートのドキュメントを参照してください。
 
-```bash
-pnpm dev
-# or
-npm run dev
-```
+- [ルート README](../README.md)
+- [製品要求仕様書 (PRD)](../docs/PRD.md)
+- [プライバシーポリシー](../docs/PRIVACY.md)
+- [コントリビューションガイド](../CONTRIBUTING.md)
 
-Open your browser and load the appropriate development build. For example, if you are developing for the chrome browser, using manifest v3, use: `build/chrome-mv3-dev`.
-
-You can start editing the popup by modifying `popup.tsx`. It should auto-update as you make changes. To add an options page, simply add a `options.tsx` file to the root of the project, with a react component default exported. Likewise to add a content page, add a `content.ts` file to the root of the project, importing some module and do some logic, then reload the extension on your browser.
-
-For further guidance, [visit our Documentation](https://docs.plasmo.com/)
-
-## Making production build
-
-Run the following:
+## クイックコマンド
 
 ```bash
-pnpm build
-# or
-npm run build
+pnpm install
+pnpm dev          # 開発ビルド (build/chrome-mv3-dev)
+pnpm tsc --noEmit # TypeScript 型チェック
+pnpm build        # 本番ビルド (build/chrome-mv3-prod)
+pnpm package      # 配布用 zip 作成
 ```
-
-This should create a production bundle for your extension, ready to be zipped and published to the stores.
-
-## Submit to the webstores
-
-The easiest way to deploy your Plasmo extension is to use the built-in [bpp](https://bpp.browser.market) GitHub action. Prior to using this action however, make sure to build your extension and upload the first version to the store to establish the basic credentials. Then, simply follow [this setup instruction](https://docs.plasmo.com/framework/workflows/submit) and you should be on your way for automated submission!

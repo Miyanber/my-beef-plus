@@ -4,6 +4,12 @@
   "version": "1.0.0",
   "description": "神戸大学 BEEF+ の時間割・課題一覧・教材ダウンロードを快適にする非公式ブラウザ拡張機能",
   "author": "Miyanber",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Miyanber/my-beef-plus.git"
+  },
+  "homepage": "https://github.com/Miyanber/my-beef-plus#readme",
   "scripts": {
     "dev": "plasmo dev",
     "build": "plasmo build",
