@@ -1,6 +1,6 @@
 import { parseCourseDetail, parseGlobalChrome, parseTasks, parseTimetable } from "./parsers";
 import { getSyncCache, setSyncCache } from "./storage-cache";
-import type { CourseDetail, TaskStore, TimetableStore } from "./timetable-data";
+import type { CourseDetail, GlobalChrome, TaskStore, TimetableStore } from "./timetable-data";
 import { setNativeHidden } from "./utils";
 
 export type RouteType = "timetable" | "course" | "task" | "native";
@@ -174,8 +174,14 @@ export async function revalidatePage(targetUrl: string, route: CustomRoute): Pro
 
     const chrome = parseGlobalChrome(doc);
     if (chrome.userName || chrome.infos.length > 0 || chrome.updates.length > 0) {
-      setSyncCache("globalChrome", chrome);
-      notifyDataUpdated("globalChrome", chrome);
+      const cachedChrome = getSyncCache<GlobalChrome>("globalChrome");
+      const mergedChrome: GlobalChrome = {
+        userName: chrome.userName || cachedChrome?.userName || "",
+        infos: chrome.infos,
+        updates: chrome.updates,
+      };
+      setSyncCache("globalChrome", mergedChrome);
+      notifyDataUpdated("globalChrome", mergedChrome);
     }
   } catch (err: any) {
     if (err?.name !== "AbortError") {

@@ -47,6 +47,7 @@ export async function scrapeTasks(): Promise<TaskStore> {
 
 export async function scrapeGlobalChrome(): Promise<GlobalChrome> {
   await waitForDomReady();
+  await waitForSelector(".login-view-name", { timeout: 3000 }).catch(() => {});
   return parseGlobalChrome(document);
 }
 

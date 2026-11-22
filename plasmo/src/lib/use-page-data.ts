@@ -134,25 +134,41 @@ export function useGlobalChrome(): GlobalChrome | undefined {
   });
 
   useEffect(() => {
-    return onDataUpdated((updatedKey, updatedData) => {
-      if (updatedKey === "globalChrome") {
-        setChrome(updatedData as GlobalChrome);
+    const mergeAndCache = (next: GlobalChrome) => {
+      setChrome((prev) => {
+        const cached = prev ?? getSyncCache<GlobalChrome>("globalChrome");
+        const merged: GlobalChrome = {
+          userName: next.userName || cached?.userName || "",
+          infos: next.infos,
+          updates: next.updates,
+        };
+        try {
+          setSyncCache("globalChrome", merged);
+        } catch (e) {
+          console.warn("[my-beef-plus] failed to write globalChrome cache", e);
+        }
+        return merged;
+      });
+    };
+
+    const unsubscribe = onDataUpdated((updatedKey, updatedData) => {
+      if (updatedKey === "globalChrome" && updatedData) {
+        mergeAndCache(updatedData as GlobalChrome);
       }
     });
-  }, []);
 
-  useEffect(() => {
     let cancelled = false;
     scrapeGlobalChrome()
       .then((c) => {
         if (!cancelled && c) {
-          setChrome(c);
-          setSyncCache("globalChrome", c);
+          mergeAndCache(c);
         }
       })
       .catch((e) => console.warn("[my-beef-plus] failed to read global chrome", e));
+
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, []);
 
