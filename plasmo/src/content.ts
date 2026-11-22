@@ -85,6 +85,22 @@ if (typeof window !== "undefined") {
       applyTheme(getResolvedTheme() === "dark")
     }
   })
+
+  // システムテーマ変更時に "system"（または未設定）なら自動追従
+  if (window.matchMedia) {
+    window
+      .matchMedia("(prefers-color-scheme: dark)")
+      .addEventListener("change", () => {
+        try {
+          const saved = window.localStorage
+            ? window.localStorage.getItem("theme")
+            : null
+          if (saved !== "dark" && saved !== "light") {
+            applyTheme(getResolvedTheme() === "dark")
+          }
+        } catch {}
+      })
+  }
 }
 
 // 3. レスポンシブ用 viewport の注入（純粋スクリプトとして実行、UIマウントなし）

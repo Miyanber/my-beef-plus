@@ -1,11 +1,25 @@
 import type { PlasmoCSConfig } from "plasmo"
-import { Moon, Sun } from "lucide-react"
+import { Monitor, Moon, Sun } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Storage } from "@plasmohq/storage"
 import { getDefaultStyle } from "~lib/plasmo-style"
 import { onRouteChanged, parseRoute } from "~lib/router"
 
 const localArea = new Storage({ area: "local" })
+
+type ThemeMode = "system" | "light" | "dark"
+
+const NEXT_THEME: Record<ThemeMode, ThemeMode> = {
+  system: "light",
+  light: "dark",
+  dark: "system"
+}
+
+const THEME_META: Record<ThemeMode, { label: string; nextLabel: string }> = {
+  system: { label: "システム", nextLabel: "ライト" },
+  light: { label: "ライト", nextLabel: "ダーク" },
+  dark: { label: "ダーク", nextLabel: "システム" }
+}
 
 export const config: PlasmoCSConfig = {
   matches: [
@@ -27,47 +41,80 @@ function isModernUiPage(): boolean {
 }
 
 /**
- * 現在のテーマがダークモードかを判定する
+ * 保存されているテーマモードを取得する（未設定時は system）
  */
-function checkIsDark(): boolean {
-  if (typeof document === "undefined") return false
-  return document.documentElement.classList.contains("dark")
+function getStoredThemeMode(): ThemeMode {
+  try {
+    const saved = window.localStorage ? window.localStorage.getItem("theme") : null
+    if (saved === "light" || saved === "dark" || saved === "system") {
+      return saved
+    }
+  } catch {}
+  return "system"
+}
+
+/**
+ * テーマモードに応じて <html> のダーククラスを適用する
+ */
+function applyDocumentTheme(mode: ThemeMode): void {
+  if (typeof document === "undefined") return
+  const isDark =
+    mode === "dark" ||
+    (mode === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-color-scheme: dark)").matches)
+
+  if (isDark) {
+    document.documentElement.classList.add("dark")
+    document.documentElement.style.colorScheme = "dark"
+  } else {
+    document.documentElement.classList.remove("dark")
+    document.documentElement.style.colorScheme = "light"
+  }
 }
 
 const LegacyThemeToggle = () => {
   const [mounted, setMounted] = useState(false)
   const [isModern, setIsModern] = useState(false)
-  const [isDark, setIsDark] = useState(false)
+  const [themeMode, setThemeMode] = useState<ThemeMode>("system")
 
   useEffect(() => {
     setMounted(true)
     setIsModern(isModernUiPage())
-    setIsDark(checkIsDark())
+    setThemeMode(getStoredThemeMode())
 
     const handleThemeChange = (e: any) => {
       const targetTheme = e.detail?.theme
-      if (targetTheme === "dark") {
-        setIsDark(true)
-      } else if (targetTheme === "light") {
-        setIsDark(false)
+      if (targetTheme === "dark" || targetTheme === "light" || targetTheme === "system") {
+        setThemeMode(targetTheme)
       } else {
-        setIsDark(checkIsDark())
+        setThemeMode(getStoredThemeMode())
       }
     }
 
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "theme") {
-        setIsDark(checkIsDark())
+        const nextMode = getStoredThemeMode()
+        setThemeMode(nextMode)
+        applyDocumentTheme(nextMode)
+      }
+    }
+
+    const mediaQuery = window.matchMedia?.("(prefers-color-scheme: dark)")
+    const handleMediaChange = () => {
+      if (getStoredThemeMode() === "system") {
+        applyDocumentTheme("system")
       }
     }
 
     window.addEventListener("beef-plus-theme-change", handleThemeChange)
     window.addEventListener("storage", handleStorage)
+    mediaQuery?.addEventListener("change", handleMediaChange)
 
     // SPAルーティング変更リスナー
     const cleanupRoute = onRouteChanged(() => {
       setIsModern(isModernUiPage())
-      setIsDark(checkIsDark())
+      setThemeMode(getStoredThemeMode())
     })
 
     // MutationObserver でネイティブDOM隠蔽やURL変化を監視
@@ -82,6 +129,7 @@ const LegacyThemeToggle = () => {
     return () => {
       window.removeEventListener("beef-plus-theme-change", handleThemeChange)
       window.removeEventListener("storage", handleStorage)
+      mediaQuery?.removeEventListener("change", handleMediaChange)
       cleanupRoute()
       observer.disconnect()
     }
@@ -93,16 +141,9 @@ const LegacyThemeToggle = () => {
   }
 
   const toggleTheme = () => {
-    const nextDark = !isDark
-    const nextTheme = nextDark ? "dark" : "light"
+    const nextTheme = NEXT_THEME[themeMode]
 
-    if (nextDark) {
-      document.documentElement.classList.add("dark")
-      document.documentElement.style.colorScheme = "dark"
-    } else {
-      document.documentElement.classList.remove("dark")
-      document.documentElement.style.colorScheme = "light"
-    }
+    applyDocumentTheme(nextTheme)
 
     try {
       localStorage.setItem("theme", nextTheme)
@@ -116,22 +157,26 @@ const LegacyThemeToggle = () => {
       })
     )
 
-    setIsDark(nextDark)
+    setThemeMode(nextTheme)
   }
+
+  const meta = THEME_META[themeMode]
 
   return (
     <div className="fixed top-2 right-3 z-[99999] pointer-events-auto">
       <button
         type="button"
         onClick={toggleTheme}
-        aria-label="テーマ切り替え (Light / Dark)"
-        title={isDark ? "ライトモードに切り替え" : "ダークモードに切り替え"}
+        aria-label={`テーマ切り替え（現在: ${meta.label}）`}
+        title={`テーマ: ${meta.label}（クリックで${meta.nextLabel}に切り替え）`}
         className="flex size-9 items-center justify-center rounded-full border border-border/80 bg-card/90 text-foreground shadow-md backdrop-blur transition-all duration-200 hover:scale-105 hover:bg-muted active:scale-95"
       >
-        {isDark ? (
-          <Sun className="size-4.5 text-amber-400 transition-transform duration-200" />
+        {themeMode === "system" ? (
+          <Monitor className="size-4.5 text-slate-700 dark:text-slate-200 transition-transform duration-200" />
+        ) : themeMode === "light" ? (
+          <Sun className="size-4.5 text-amber-500 transition-transform duration-200" />
         ) : (
-          <Moon className="size-4.5 text-slate-700 transition-transform duration-200" />
+          <Moon className="size-4.5 text-slate-700 dark:text-slate-200 transition-transform duration-200" />
         )}
       </button>
     </div>
