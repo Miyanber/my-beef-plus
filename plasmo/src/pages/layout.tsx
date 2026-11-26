@@ -13,7 +13,7 @@ function LayoutInner({ children }: LayoutProps) {
 	const chrome = useGlobalChrome()
 
 	return (
-		<div className="flex w-screen min-h-screen bg-background">
+		<div className="flex w-full min-h-screen bg-background">
 			<AppSidebar />
 
 			<div className="flex min-w-0 flex-1 flex-col">
