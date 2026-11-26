@@ -4,6 +4,11 @@
 @tailwind components;
 @tailwind utilities;
 
+:host(plasmo-csui) {
+  display: block;
+  width: 100%;
+}
+
 /* 2. その中にあるShadow DOMのコンテナも追従させる */
 #plasmo-shadow-container {
   all: initial;
@@ -14,6 +19,7 @@
 
 #plasmo-shadow-container > div {
   display: block;
+  width: 100%;
 }
 
 :root {
