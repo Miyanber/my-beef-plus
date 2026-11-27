@@ -43,7 +43,8 @@
   },
   "manifest": {
     "host_permissions": [
-      "https://beefplus.center.kobe-u.ac.jp/*"
+      "https://beefplus.center.kobe-u.ac.jp/*",
+      "https://beef.center.kobe-u.ac.jp/*"
     ]
   }
 }

@@ -1,0 +1,952 @@
+/* ==========================================================================
+   BEEF2026 (beef.center.kobe-u.ac.jp / Moodle Classic) UI & ダークテーマ
+   - 改良後 BEEF+ (style.css) のデザインシステムに準拠
+   - Light モード: クリーンな背景・カード・余白へ整形
+   - Dark モード (html.dark): Neutral 系 (#0a0a0a / #171717 / #262626) + 白ベースリンク
+   - 安全原則: 課題提出・テスト解答・ログインフォームの DOM 構造/動作は改変しない
+   ========================================================================== */
+
+/* ==========================================================================
+   1. 共通レイアウト・タイポグラフィ改善 (改良後 BEEF+ と統一)
+   ========================================================================== */
+html,
+body,
+button:not(.fa):not(.fas):not(.far):not(.fab),
+input,
+select,
+textarea {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code,
+pre,
+kbd,
+samp {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
+
+body:not(.editing),
+body:not(.editing) #page-wrapper,
+body:not(.editing) #page {
+  background-color: oklch(0.985 0.003 285);
+}
+
+/* Navbar の調整・ブランド省略でクイックナビ領域を確保 */
+nav.navbar.fixed-top.navbar-bootswatch {
+  min-height: 52px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08) !important;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+nav.navbar.fixed-top .container-fluid {
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+nav.navbar.fixed-top a.navbar-brand {
+  min-width: 0;
+  max-width: 250px;
+  flex-shrink: 1;
+}
+
+nav.navbar.fixed-top a.navbar-brand .sitename {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+@media screen and (max-width: 991px) {
+  nav.navbar.fixed-top a.navbar-brand {
+    max-width: 150px;
+  }
+}
+
+@media screen and (max-width: 575px) {
+  nav.navbar.fixed-top a.navbar-brand {
+    max-width: 110px;
+  }
+}
+
+/* 注入されたクイックナビゲーション */
+#my-beef-b2026-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.25rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#my-beef-b2026-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.my-beef-b2026-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.86) !important;
+  text-decoration: none !important;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.my-beef-b2026-nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+  color: #ffffff !important;
+}
+
+.my-beef-b2026-nav-link[data-active="true"] {
+  background-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff !important;
+  font-weight: 600;
+}
+
+.my-beef-b2026-nav-link svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+@media screen and (max-width: 767px) {
+  .my-beef-b2026-nav-link {
+    padding: 0.3rem 0.45rem;
+    font-size: 0.75rem;
+  }
+  .my-beef-b2026-nav-link svg {
+    display: none;
+  }
+}
+
+/* Navbar 内テーマ切替ボタン */
+#my-beef-b2026-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  cursor: pointer;
+  margin: 0 0.25rem;
+  padding: 0;
+  align-self: center;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+#my-beef-b2026-theme-btn:hover {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
+#my-beef-b2026-theme-btn:active {
+  transform: scale(0.95);
+}
+
+#my-beef-b2026-theme-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* ログインページ等で Navbar がない場合のフローティング切替ボタン */
+#my-beef-b2026-theme-btn.my-beef-b2026-theme-fab {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 99999;
+  width: 38px;
+  height: 38px;
+  margin: 0;
+  border-color: #e4e4e7;
+  background-color: rgba(255, 255, 255, 0.92);
+  color: #18181b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+/* カード・ブロックのモダン化 */
+body:not(.editing) .card,
+body:not(.editing) .block.card,
+body:not(.editing) #page-header .card,
+body:not(.editing) #region-main > .card {
+  border-radius: 12px !important;
+  border-color: oklch(0.92 0.008 285) !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+}
+
+body:not(.editing) #page-header .card-body {
+  padding: 1rem 1.25rem !important;
+}
+
+body:not(.editing) #page-header h1.h2 {
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.015em;
+}
+
+/* 左ナビゲーションの長い科目名の視認性向上 */
+#block-region-side-pre .block_tree .tree_item {
+  line-height: 1.45;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================================================
+   2. サイトホーム (/) の整理・マイコース優先表示
+   ========================================================================== */
+body#page-site-index:not(.editing) #region-main [role="main"] {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+body#page-site-index:not(.editing) #region-main [role="main"] > #frontpage-course-list {
+  order: 1;
+}
+
+body#page-site-index:not(.editing) #region-main [role="main"] > .box {
+  order: 2;
+  padding-top: 0.25rem !important;
+  padding-bottom: 0.25rem !important;
+}
+
+body#page-site-index:not(.editing) #region-main [role="main"] > #site-news-forum {
+  order: 3;
+}
+
+body#page-site-index:not(.editing) #region-main [role="main"] > .course-content {
+  order: 4;
+}
+
+body#page-site-index:not(.editing) #region-main [role="main"] > #frontpage-category-names {
+  order: 5;
+}
+
+/* サイトホームのマイコースをクリーンな2列カードグリッドへ */
+body#page-site-index:not(.editing) #frontpage-course-list > h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+}
+
+body#page-site-index:not(.editing) .frontpage-course-list-enrolled {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 0.875rem;
+}
+
+body#page-site-index:not(.editing) .frontpage-course-list-enrolled .coursebox {
+  margin: 0 !important;
+  padding: 1rem 1.125rem !important;
+  border: 1px solid oklch(0.92 0.008 285) !important;
+  border-radius: 12px !important;
+  background-color: #ffffff !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+body#page-site-index:not(.editing) .frontpage-course-list-enrolled .coursebox:hover {
+  border-color: #a1a1aa !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+}
+
+body#page-site-index:not(.editing) .frontpage-course-list-enrolled .coursebox h3.coursename {
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  margin: 0 !important;
+}
+
+body#page-site-index:not(.editing) .frontpage-course-list-enrolled .coursebox .summary {
+  font-size: 0.85rem;
+  color: #52525b;
+  margin-top: 0.25rem;
+}
+
+body#page-site-index:not(.editing) .frontpage-course-list-enrolled .coursebox ul.teachers {
+  font-size: 0.8rem;
+  color: #71717a;
+  margin: 0.25rem 0 0 !important;
+  padding-left: 0 !important;
+  list-style: none;
+}
+
+/* 折りたたみラッパー (<details class="my-beef-b2026-collapse">) */
+details.my-beef-b2026-collapse {
+  border: 1px solid oklch(0.92 0.008 285);
+  border-radius: 12px;
+  background-color: #ffffff;
+  overflow: hidden;
+}
+
+details.my-beef-b2026-collapse > summary.my-beef-b2026-collapse-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #3f3f46;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  transition: background-color 0.15s ease;
+}
+
+details.my-beef-b2026-collapse > summary.my-beef-b2026-collapse-summary::-webkit-details-marker {
+  display: none;
+}
+
+details.my-beef-b2026-collapse > summary.my-beef-b2026-collapse-summary:hover {
+  background-color: #f4f4f5;
+}
+
+details.my-beef-b2026-collapse > summary.my-beef-b2026-collapse-summary::after {
+  content: "▸";
+  font-size: 0.85rem;
+  color: #71717a;
+  transition: transform 0.15s ease;
+}
+
+details.my-beef-b2026-collapse[open] > summary.my-beef-b2026-collapse-summary {
+  border-bottom: 1px solid oklch(0.92 0.008 285);
+}
+
+details.my-beef-b2026-collapse[open] > summary.my-beef-b2026-collapse-summary::after {
+  transform: rotate(90deg);
+}
+
+details.my-beef-b2026-collapse > .my-beef-b2026-collapse-body {
+  padding: 1rem;
+}
+
+details.my-beef-b2026-collapse.my-beef-b2026-collapse-compact {
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+details.my-beef-b2026-collapse.my-beef-b2026-collapse-compact > summary.my-beef-b2026-collapse-summary {
+  padding: 0.4rem 0.25rem;
+  font-size: 0.82rem;
+  color: #71717a;
+}
+
+details.my-beef-b2026-collapse.my-beef-b2026-collapse-compact > .my-beef-b2026-collapse-body {
+  padding: 0.75rem 0 0;
+}
+
+/* マイコースカード・講義セクション・活動アイテム (Light) */
+body:not(.editing) .card.course-card {
+  border-radius: 12px !important;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+body:not(.editing) .card.course-card:hover {
+  border-color: #a1a1aa !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+}
+
+body:not(.editing) li.section.course-section.main {
+  border-radius: 10px !important;
+  border: 1px solid oklch(0.92 0.008 285) !important;
+  background-color: #ffffff !important;
+  margin-top: 0 !important;
+  margin-bottom: 0.5rem !important;
+  padding: 0.65rem 0.9rem !important;
+}
+
+/* Moodle 4.x 内側ラッパー (.section-item) の二重枠線・二重余白を解消 */
+body:not(.editing) li.section.course-section.main > .section-item {
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background-color: transparent !important;
+}
+
+body:not(.editing) li.section.course-section.main .course-section-header {
+  min-height: unset !important;
+  align-items: center;
+}
+
+body:not(.editing) li.section.course-section.main h3.sectionname {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+}
+
+body:not(.editing) li.section.course-section.main .content.course-content-item-content.show {
+  margin-top: 0.45rem !important;
+}
+
+body:not(.editing) li.section.course-section.main ul.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem !important;
+}
+
+body:not(.editing) li.section.course-section.main li.activity.activity-wrapper {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+body:not(.editing) .activity-item {
+  border-radius: 8px !important;
+  padding: 0.45rem 0.65rem !important;
+  border: 1px solid transparent !important;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+body:not(.editing) .activity-item:hover {
+  background-color: #f4f4f5 !important;
+}
+
+body:not(.editing) .activity-item .activity-icon.activityiconcontainer.smaller {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 4px !important;
+}
+
+body:not(.editing) .activity-item .activityname {
+  font-size: 0.875rem !important;
+  line-height: 1.35 !important;
+}
+
+body:not(.editing) .activity-item .description,
+body:not(.editing) .activity-item .contentafterlink {
+  margin-top: 0.2rem !important;
+  font-size: 0.8125rem !important;
+}
+
+/* ==========================================================================
+   3. ダークモード (html.dark / 改良後 BEEF+ Neutral パレット準拠)
+   --background: #0a0a0a, --card: #171717, --muted: #262626,
+   --foreground: #fafafa, --muted-foreground: #a3a3a3,
+   --border: rgba(255, 255, 255, 0.1)
+   ========================================================================== */
+html.dark {
+  color-scheme: dark !important;
+}
+
+html.dark *,
+html.dark *:before,
+html.dark *:after {
+  text-shadow: none !important;
+}
+
+/* ベース背景・テキスト */
+html.dark,
+html.dark body,
+html.dark #page-wrapper,
+html.dark #page,
+html.dark #page-content,
+html.dark #region-main-box,
+html.dark #region-main,
+html.dark .pagelayout-standard #page,
+html.dark .pagelayout-course #page {
+  background-color: #0a0a0a !important;
+  color: #fafafa !important;
+}
+
+/* Navbar (BEEF+ TopHeader と統一) */
+html.dark nav.navbar.fixed-top.navbar-bootswatch {
+  background-color: #171717 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+}
+
+html.dark nav.navbar.fixed-top .navbar-brand,
+html.dark nav.navbar.fixed-top .nav-link,
+html.dark nav.navbar.fixed-top .icon,
+html.dark nav.navbar.fixed-top .btn-link,
+html.dark #usernavigation .usermenu a.dropdown-toggle,
+html.dark #usernavigation > .popover-region > .popover-region-toggle {
+  color: #fafafa !important;
+}
+
+html.dark nav.navbar.fixed-top .nav-link:hover {
+  color: #ffffff !important;
+}
+
+html.dark nav.navbar.fixed-top .divider {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .my-beef-b2026-nav-link {
+  color: #a3a3a3 !important;
+}
+
+html.dark .my-beef-b2026-nav-link:hover {
+  background-color: #262626 !important;
+  color: #fafafa !important;
+}
+
+html.dark .my-beef-b2026-nav-link[data-active="true"] {
+  background-color: #262626 !important;
+  color: #fafafa !important;
+}
+
+html.dark #my-beef-b2026-theme-btn {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  background-color: #262626 !important;
+  color: #fafafa !important;
+}
+
+html.dark #my-beef-b2026-theme-btn:hover {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+}
+
+html.dark .userinitials {
+  background-color: #262626 !important;
+  color: #fafafa !important;
+}
+
+/* フッター */
+html.dark footer#page-footer,
+html.dark footer#page-footer.footer-dark,
+html.dark footer#page-footer.bg-dark {
+  background-color: #0a0a0a !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #a3a3a3 !important;
+}
+
+html.dark footer#page-footer a {
+  color: #d4d4d4 !important;
+}
+
+html.dark footer#page-footer a:hover {
+  color: #fafafa !important;
+}
+
+/* カード・ブロック・ページヘッダー・背景ユーティリティ上書き */
+html.dark .card,
+html.dark .block.card,
+html.dark #page-header .card,
+html.dark #region-main > .card,
+html.dark .bg-white,
+html.dark .bg-light,
+html.dark .card-footer.bg-white,
+html.dark .coursebox,
+html.dark .frontpage-course-list-enrolled .coursebox,
+html.dark li.section.course-section.main,
+html.dark .forum-post-container,
+html.dark .forumpost,
+html.dark .generalbox,
+html.dark details.my-beef-b2026-collapse {
+  background-color: #171717 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+  box-shadow: none !important;
+}
+
+html.dark .card-header,
+html.dark .card-footer:not(.course-card .card-footer),
+html.dark .list-group-item,
+html.dark .breadcrumb,
+html.dark details.my-beef-b2026-collapse > summary.my-beef-b2026-collapse-summary:hover {
+  background-color: #1f1f1f !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+
+html.dark details.my-beef-b2026-collapse[open] > summary.my-beef-b2026-collapse-summary {
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark details.my-beef-b2026-collapse > summary.my-beef-b2026-collapse-summary {
+  color: #fafafa !important;
+}
+
+html.dark details.my-beef-b2026-collapse.my-beef-b2026-collapse-compact,
+html.dark details.my-beef-b2026-collapse.my-beef-b2026-collapse-compact > summary.my-beef-b2026-collapse-summary {
+  background-color: transparent !important;
+  color: #a3a3a3 !important;
+}
+
+html.dark .border,
+html.dark .border-top,
+html.dark .border-bottom,
+html.dark .border-left,
+html.dark .border-right,
+html.dark .border-start,
+html.dark .border-end {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark hr {
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+  opacity: 1 !important;
+}
+
+/* 見出し・テキスト色 */
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6,
+html.dark .h1,
+html.dark .h2,
+html.dark .h3,
+html.dark .h4,
+html.dark .h5,
+html.dark .h6,
+html.dark .text-dark,
+html.dark .text-body,
+html.dark .text-primary {
+  color: #fafafa !important;
+}
+
+html.dark .text-muted,
+html.dark .text-secondary,
+html.dark .text-black-50,
+html.dark .coursebox .summary,
+html.dark .coursebox ul.teachers,
+html.dark .dimmed,
+html.dark .dimmed_text {
+  color: #a3a3a3 !important;
+}
+
+/* リンク（改良後 BEEF+ に合わせて白 / オフホワイト基調、本文内リンクのみ下線付き） */
+html.dark a:not(.btn):not(.nav-link):not(.dropdown-item):not(.my-beef-b2026-nav-link):not(.navbar-brand):not(.page-link):not(.alert-link) {
+  color: #fafafa !important;
+}
+
+html.dark a:not(.btn):not(.nav-link):not(.dropdown-item):not(.my-beef-b2026-nav-link):not(.navbar-brand):not(.page-link):not(.alert-link):hover {
+  color: #ffffff !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px;
+}
+
+html.dark .aalink,
+html.dark h3.coursename a,
+html.dark .course-card .coursename,
+html.dark .block_tree .tree_item a {
+  color: #fafafa !important;
+}
+
+html.dark .breadcrumb-item a,
+html.dark .breadcrumb-item.active {
+  color: #a3a3a3 !important;
+}
+
+html.dark .breadcrumb-item a:hover {
+  color: #fafafa !important;
+}
+
+html.dark .no-overflow a:not(.btn),
+html.dark .sitetopic a:not(.btn),
+html.dark .summary a:not(.btn),
+html.dark .generalbox a:not(.btn) {
+  color: #e5e5e5 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 2px !important;
+}
+
+html.dark .no-overflow a:not(.btn):hover,
+html.dark .sitetopic a:not(.btn):hover,
+html.dark .summary a:not(.btn):hover,
+html.dark .generalbox a:not(.btn):hover {
+  color: #ffffff !important;
+  opacity: 0.85;
+}
+
+/* コースカード & 活動アイテム */
+html.dark .card.course-card:hover,
+html.dark .frontpage-course-list-enrolled .coursebox:hover {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html.dark .card.course-card .card-img-top {
+  filter: brightness(0.82) saturate(0.88);
+}
+
+html.dark li.section.course-section.main {
+  border-color: rgba(255, 255, 255, 0.07) !important;
+}
+
+html.dark li.section.course-section.main > .section-item {
+  border: none !important;
+  background-color: transparent !important;
+}
+
+html.dark .activity-item {
+  background-color: transparent !important;
+  border-color: transparent !important;
+}
+
+html.dark .activity-item:hover {
+  background-color: #262626 !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark .badge-light,
+html.dark .badge.bg-light,
+html.dark .badge-secondary {
+  background-color: #262626 !important;
+  color: #fafafa !important;
+}
+
+/* ドロップダウン・ポップオーバー・モーダル・メッセージドロワー */
+html.dark .dropdown-menu,
+html.dark .popover,
+html.dark .popover-region-container,
+html.dark .modal-content,
+html.dark .moodle-dialogue-base .moodle-dialogue-wrap,
+html.dark .drawer,
+html.dark [data-region="message-drawer"] {
+  background-color: #171717 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+
+html.dark .dropdown-item,
+html.dark .popover-body,
+html.dark .popover-header,
+html.dark .modal-header,
+html.dark .modal-footer,
+html.dark .moodle-dialogue-base .moodle-dialogue-hd {
+  background-color: #171717 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+
+html.dark .dropdown-item:hover,
+html.dark .dropdown-item:focus,
+html.dark .list-group-item-action:hover,
+html.dark .notification-area .content-item-container:hover,
+html.dark .popover-region-content .content-item-container:hover {
+  background-color: #262626 !important;
+  color: #ffffff !important;
+}
+
+html.dark .dropdown-divider {
+  border-top-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .close {
+  color: #fafafa !important;
+}
+
+/* ボタン */
+html.dark .btn-secondary,
+html.dark .btn-outline-secondary,
+html.dark .btn-light,
+html.dark .btn-default {
+  background-color: #262626 !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fafafa !important;
+}
+
+html.dark .btn-secondary:hover,
+html.dark .btn-outline-secondary:hover,
+html.dark .btn-light:hover,
+html.dark .btn-default:hover {
+  background-color: #333333 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+}
+
+html.dark .btn-primary {
+  background-color: #e5e5e5 !important;
+  border-color: #e5e5e5 !important;
+  color: #171717 !important;
+  font-weight: 600 !important;
+}
+
+html.dark .btn-primary:hover {
+  background-color: #ffffff !important;
+  border-color: #ffffff !important;
+  color: #0a0a0a !important;
+}
+
+html.dark .btn-link {
+  color: #e5e5e5 !important;
+}
+
+html.dark .btn-link:hover {
+  color: #ffffff !important;
+}
+
+html.dark .page-link {
+  background-color: #171717 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+
+html.dark .page-item.active .page-link {
+  background-color: #e5e5e5 !important;
+  border-color: #e5e5e5 !important;
+  color: #171717 !important;
+}
+
+/* フォーム入力 */
+html.dark .form-control,
+html.dark .custom-select,
+html.dark input[type="text"],
+html.dark input[type="password"],
+html.dark input[type="email"],
+html.dark input[type="search"],
+html.dark input[type="url"],
+html.dark input[type="number"],
+html.dark select,
+html.dark textarea {
+  background-color: #0a0a0a !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #fafafa !important;
+}
+
+html.dark .form-control:focus,
+html.dark .custom-select:focus,
+html.dark input:focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: #a3a3a3 !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.12) !important;
+}
+
+html.dark .form-control::placeholder,
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #737373 !important;
+}
+
+/* テーブル・提出ステータス・クイズ確認 */
+html.dark table,
+html.dark .table,
+html.dark table.generaltable {
+  background-color: #171717 !important;
+  color: #fafafa !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark table th,
+html.dark .table th,
+html.dark table.generaltable th {
+  background-color: #262626 !important;
+  color: #fafafa !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark table td,
+html.dark .table td,
+html.dark table.generaltable td {
+  background-color: #171717 !important;
+  color: #e5e5e5 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .table-striped tbody tr:nth-of-type(odd) td,
+html.dark table.generaltable tbody tr:nth-of-type(odd) td {
+  background-color: #1c1c1c !important;
+}
+
+html.dark td.submissionstatussubmitted,
+html.dark td.earlysubmission,
+html.dark td.submissiongraded {
+  background-color: #052e16 !important;
+  color: #86efac !important;
+}
+
+html.dark td.latesubmission,
+html.dark td.overdue {
+  background-color: #2a1215 !important;
+  color: #fca5a5 !important;
+}
+
+/* 小テスト解答ボックス・タイマー */
+html.dark .que .formulation,
+html.dark .que .info,
+html.dark .que .outcome,
+html.dark #quiz-timer-wrapper #quiz-timer {
+  background-color: #171717 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+
+/* カレンダー・タイムライン */
+html.dark .calendartable th,
+html.dark .calendartable td {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark .calendartable td.today {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: #fafafa !important;
+}
+
+html.dark [data-region="timeline"] .list-group-item {
+  background-color: #1f1f1f !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* アラート */
+html.dark .alert-info {
+  background-color: #171717 !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  color: #e5e5e5 !important;
+}
+
+html.dark .alert-warning {
+  background-color: #261b07 !important;
+  border-color: #78350f !important;
+  color: #fde68a !important;
+}
+
+html.dark .alert-danger {
+  background-color: #2a1215 !important;
+  border-color: #7f1d1d !important;
+  color: #fecaca !important;
+}
+
+html.dark .alert-success {
+  background-color: #052e16 !important;
+  border-color: #14532d !important;
+  color: #bbf7d0 !important;
+}
+
+/* リッチテキスト内のインライン明色背景・暗色文字の補正 */
+html.dark .sitetopic [style*="color: #038c3f"],
+html.dark .no-overflow [style*="color: #038c3f"] {
+  color: #4ade80 !important;
+}
+
+html.dark .sitetopic [style*="color: #943b21"],
+html.dark .no-overflow [style*="color: #943b21"] {
+  color: #fb923c !important;
+}
+
+html.dark .no-overflow [style*="color: rgb(0, 0, 0)"],
+html.dark .no-overflow [style*="color: #000"],
+html.dark .sitetopic [style*="color: rgb(0, 0, 0)"],
+html.dark .sitetopic [style*="color: #000"] {
+  color: #fafafa !important;
+}
+
+html.dark .no-overflow [style*="background-color: rgb(255, 255, 255)"],
+html.dark .no-overflow [style*="background-color: #fff"],
+html.dark .sitetopic [style*="background-color: rgb(255, 255, 255)"],
+html.dark .sitetopic [style*="background-color: #fff"] {
+  background-color: transparent !important;
+}

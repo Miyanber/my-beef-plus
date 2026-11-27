@@ -1,5 +1,14 @@
 import type { PlasmoCSConfig } from "plasmo"
 import legacyThemeCss from "data-text:./legacy-theme.css"
+import {
+  THEME_CHANGE_EVENT,
+  THEME_STORAGE_KEY,
+  applyDocumentTheme,
+  getStoredThemeMode,
+  isThemeMode,
+  syncThemeFromExtensionStorage,
+  watchExtensionTheme
+} from "~lib/theme-sync"
 import { waitForSelector } from "~lib/utils"
 
 export const config: PlasmoCSConfig = {
@@ -11,36 +20,6 @@ export const config: PlasmoCSConfig = {
 }
 
 const LEGACY_STYLE_ID = "my-beef-plus-legacy-theme-style"
-
-/**
- * 現在の保存されたテーマを取得する（デフォルトはシステムテーマ）
- */
-function getResolvedTheme(): "dark" | "light" {
-  try {
-    const saved = window.localStorage ? window.localStorage.getItem("theme") : null
-    if (saved === "dark") return "dark"
-    if (saved === "light") return "light"
-    // "system" または未設定時はシステム設定に追従
-    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      return "dark"
-    }
-  } catch {}
-  return "light"
-}
-
-/**
- * ページ全体（<html> タグ）にダークテーマクラスを同期反映する
- */
-function applyTheme(isDark: boolean): void {
-  const root = document.documentElement
-  if (isDark) {
-    root.classList.add("dark")
-    root.style.colorScheme = "dark"
-  } else {
-    root.classList.remove("dark")
-    root.style.colorScheme = "light"
-  }
-}
 
 /**
  * ネイティブ画面用ダークテーマCSSをDOMに即座に注入する
@@ -55,7 +34,7 @@ function injectLegacyThemeStyle(): void {
       target.appendChild(style)
     } else {
       document.addEventListener("DOMContentLoaded", () => {
-        (document.head || document.documentElement).appendChild(style!)
+        ;(document.head || document.documentElement).appendChild(style!)
       }, { once: true })
     }
   }
@@ -64,25 +43,32 @@ function injectLegacyThemeStyle(): void {
 
 // 1. document_start 直後に 0ms でテーマを判定・適用（白飛び/FOUCを完全根絶）
 // legacy-theme.css v1.1.0 (shadcn sharp theme)
-const initialTheme = getResolvedTheme()
-applyTheme(initialTheme === "dark")
+applyDocumentTheme(getStoredThemeMode())
 injectLegacyThemeStyle()
 
-// 2. 他のタブや独自UI画面（next-themes）との同期を監視
+// 2. 別オリジン (BEEF2026) や他タブとのテーマ同期を監視
 if (typeof window !== "undefined") {
+  void syncThemeFromExtensionStorage((saved) => {
+    window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme: saved } }))
+  })
+
+  watchExtensionTheme((nextMode) => {
+    window.dispatchEvent(new CustomEvent(THEME_CHANGE_EVENT, { detail: { theme: nextMode } }))
+  })
+
   window.addEventListener("storage", (e) => {
-    if (e.key === "theme") {
-      applyTheme(getResolvedTheme() === "dark")
+    if (e.key === THEME_STORAGE_KEY) {
+      applyDocumentTheme(getStoredThemeMode())
     }
   })
 
   // 同一ウィンドウ内の切り替えカスタムイベント
-  window.addEventListener("beef-plus-theme-change", (e: any) => {
+  window.addEventListener(THEME_CHANGE_EVENT, (e: any) => {
     const nextTheme = e.detail?.theme
-    if (nextTheme === "dark" || nextTheme === "light") {
-      applyTheme(nextTheme === "dark")
+    if (isThemeMode(nextTheme)) {
+      applyDocumentTheme(nextTheme)
     } else {
-      applyTheme(getResolvedTheme() === "dark")
+      applyDocumentTheme(getStoredThemeMode())
     }
   })
 
@@ -91,14 +77,9 @@ if (typeof window !== "undefined") {
     window
       .matchMedia("(prefers-color-scheme: dark)")
       .addEventListener("change", () => {
-        try {
-          const saved = window.localStorage
-            ? window.localStorage.getItem("theme")
-            : null
-          if (saved !== "dark" && saved !== "light") {
-            applyTheme(getResolvedTheme() === "dark")
-          }
-        } catch {}
+        if (getStoredThemeMode() === "system") {
+          applyDocumentTheme("system")
+        }
       })
   }
 }

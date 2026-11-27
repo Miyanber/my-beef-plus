@@ -1,25 +1,21 @@
 import type { PlasmoCSConfig } from "plasmo"
 import { Monitor, Moon, Sun } from "lucide-react"
 import { useEffect, useState } from "react"
-import { Storage } from "@plasmohq/storage"
 import { getDefaultStyle } from "~lib/plasmo-style"
 import { onRouteChanged, parseRoute } from "~lib/router"
-
-const localArea = new Storage({ area: "local" })
-
-type ThemeMode = "system" | "light" | "dark"
-
-const NEXT_THEME: Record<ThemeMode, ThemeMode> = {
-  system: "light",
-  light: "dark",
-  dark: "system"
-}
-
-const THEME_META: Record<ThemeMode, { label: string; nextLabel: string }> = {
-  system: { label: "システム", nextLabel: "ライト" },
-  light: { label: "ライト", nextLabel: "ダーク" },
-  dark: { label: "ダーク", nextLabel: "システム" }
-}
+import {
+  NEXT_THEME,
+  THEME_CHANGE_EVENT,
+  THEME_META,
+  THEME_STORAGE_KEY,
+  applyDocumentTheme,
+  getStoredThemeMode,
+  isThemeMode,
+  saveThemeEverywhere,
+  syncThemeFromExtensionStorage,
+  watchExtensionTheme,
+  type ThemeMode
+} from "~lib/theme-sync"
 
 export const config: PlasmoCSConfig = {
   matches: [
@@ -40,39 +36,6 @@ function isModernUiPage(): boolean {
   return route.type !== "native"
 }
 
-/**
- * 保存されているテーマモードを取得する（未設定時は system）
- */
-function getStoredThemeMode(): ThemeMode {
-  try {
-    const saved = window.localStorage ? window.localStorage.getItem("theme") : null
-    if (saved === "light" || saved === "dark" || saved === "system") {
-      return saved
-    }
-  } catch {}
-  return "system"
-}
-
-/**
- * テーマモードに応じて <html> のダーククラスを適用する
- */
-function applyDocumentTheme(mode: ThemeMode): void {
-  if (typeof document === "undefined") return
-  const isDark =
-    mode === "dark" ||
-    (mode === "system" &&
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-color-scheme: dark)").matches)
-
-  if (isDark) {
-    document.documentElement.classList.add("dark")
-    document.documentElement.style.colorScheme = "dark"
-  } else {
-    document.documentElement.classList.remove("dark")
-    document.documentElement.style.colorScheme = "light"
-  }
-}
-
 const LegacyThemeToggle = () => {
   const [mounted, setMounted] = useState(false)
   const [isModern, setIsModern] = useState(false)
@@ -83,9 +46,17 @@ const LegacyThemeToggle = () => {
     setIsModern(isModernUiPage())
     setThemeMode(getStoredThemeMode())
 
+    void syncThemeFromExtensionStorage((saved) => {
+      setThemeMode(saved)
+    })
+
+    const unwatchExt = watchExtensionTheme((nextMode) => {
+      setThemeMode(nextMode)
+    })
+
     const handleThemeChange = (e: any) => {
       const targetTheme = e.detail?.theme
-      if (targetTheme === "dark" || targetTheme === "light" || targetTheme === "system") {
+      if (isThemeMode(targetTheme)) {
         setThemeMode(targetTheme)
       } else {
         setThemeMode(getStoredThemeMode())
@@ -93,7 +64,7 @@ const LegacyThemeToggle = () => {
     }
 
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === "theme") {
+      if (e.key === THEME_STORAGE_KEY) {
         const nextMode = getStoredThemeMode()
         setThemeMode(nextMode)
         applyDocumentTheme(nextMode)
@@ -107,7 +78,7 @@ const LegacyThemeToggle = () => {
       }
     }
 
-    window.addEventListener("beef-plus-theme-change", handleThemeChange)
+    window.addEventListener(THEME_CHANGE_EVENT, handleThemeChange)
     window.addEventListener("storage", handleStorage)
     mediaQuery?.addEventListener("change", handleMediaChange)
 
@@ -127,7 +98,8 @@ const LegacyThemeToggle = () => {
     })
 
     return () => {
-      window.removeEventListener("beef-plus-theme-change", handleThemeChange)
+      unwatchExt()
+      window.removeEventListener(THEME_CHANGE_EVENT, handleThemeChange)
       window.removeEventListener("storage", handleStorage)
       mediaQuery?.removeEventListener("change", handleMediaChange)
       cleanupRoute()
@@ -142,21 +114,7 @@ const LegacyThemeToggle = () => {
 
   const toggleTheme = () => {
     const nextTheme = NEXT_THEME[themeMode]
-
-    applyDocumentTheme(nextTheme)
-
-    try {
-      localStorage.setItem("theme", nextTheme)
-    } catch {}
-
-    localArea.set("theme", nextTheme).catch(() => {})
-
-    window.dispatchEvent(
-      new CustomEvent("beef-plus-theme-change", {
-        detail: { theme: nextTheme }
-      })
-    )
-
+    saveThemeEverywhere(nextTheme)
     setThemeMode(nextTheme)
   }
 
